@@ -1,29 +1,39 @@
 import React, { useState, useRef } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+  Outlet,
+  useNavigate
+} from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import CourseList from './pages/CourseList';
 import CourseDetail from './pages/CourseDetail';
 import Profile from './pages/Profile';
-import { speak, startListening, stopListening } from './utils/voiceUtils';
+import { speak, setupSpacebarListening } from './utils/voiceUtils'; // Updated import
 import axios from 'axios';
 
+// Set base URL for API calls
 axios.defaults.baseURL = 'http://localhost:5000/api';
+
 const VoiceHandler = ({ setIsLoggedIn }) => {
   const navigate = useNavigate();
   const lastCommandRef = useRef('');
 
   React.useEffect(() => {
     const handleVoiceCommand = (command) => {
+      command = command.trim().toLowerCase();
       lastCommandRef.current = command;
       let spoken = '';
 
-      // Always dispatch the event for page-level listeners
+      // Always dispatch for page-level listeners (Login/Register)
       window.dispatchEvent(new CustomEvent('voiceCommand', { detail: command }));
 
       if (command.includes('help')) {
-        spoken = 'Available commands: home, login, register, courses, profile, logout, repeat, volume up, volume down.';
+        spoken = 'Available commands: home, login, register, courses, profile, logout, repeat.';
       } else if (command.includes('home')) {
         navigate('/');
         spoken = 'Navigating to home.';
@@ -43,23 +53,25 @@ const VoiceHandler = ({ setIsLoggedIn }) => {
         localStorage.removeItem('token');
         setIsLoggedIn(false);
         navigate('/');
-        spoken = 'Logged out.';
+        spoken = 'Logged out successfully.';
       } else if (command.includes('repeat')) {
         spoken = lastCommandRef.current
           ? `Repeating: ${lastCommandRef.current}`
           : 'No previous command to repeat.';
-      } else if (command.includes('volume up')) {
-        spoken = 'Volume increased.';
-      } else if (command.includes('volume down')) {
-        spoken = 'Volume decreased.';
       } else {
         spoken = `Command not recognized: ${command}`;
       }
+
       speak(`You said: ${command}. ${spoken}`);
     };
 
-    startListening(handleVoiceCommand);
-    return () => stopListening();
+    // Setup global "Press & Hold Spacebar" listener
+    setupSpacebarListening(handleVoiceCommand);
+
+    // Optional: Welcome message
+    speak('Voice control activated. Hold spacebar and speak to navigate.');
+
+    // No cleanup needed — listeners are managed inside voiceUtils.js
   }, [navigate, setIsLoggedIn]);
 
   return null;
@@ -74,7 +86,7 @@ const Layout = ({ setIsLoggedIn }) => (
 );
 
 const ProtectedRoute = ({ isLoggedIn, children }) => {
-  return isLoggedIn ? children : <Navigate to="/login" />;
+  return isLoggedIn ? children : <Navigate to="/login" replace />;
 };
 
 const App = () => {
@@ -83,14 +95,24 @@ const App = () => {
 
   if (!speechReady) {
     return (
-      <div style={{ textAlign: 'center', marginTop: '20vh' }}>
+      <div style={{ textAlign: 'center', marginTop: '20vh', fontFamily: 'Arial, sans-serif' }}>
+        <h1>Welcome to Accessible Learning Platform</h1>
+        <p>Hold <kbd style={{ padding: '0.2em 0.4em', background: '#eee', borderRadius: '4px' }}>Spacebar</kbd> and speak to control the app</p>
         <button
           onClick={() => setSpeechReady(true)}
-          style={{ fontSize: '2rem', padding: '1rem 2rem' }}
+          style={{
+            fontSize: '1.8rem',
+            padding: '1rem 2rem',
+            margin: '2rem',
+            background: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer'
+          }}
         >
-          Start Accessible Platform
+          Start Voice Control
         </button>
-        <p>Click to enable voice and speech features.</p>
       </div>
     );
   }
@@ -99,12 +121,10 @@ const App = () => {
     <Router>
       <Routes>
         <Route element={<Layout setIsLoggedIn={setIsLoggedIn} />}>
-          {/* Home is always public */}
           <Route path="/" element={<Home />} />
-          {/* Public routes */}
           <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} />} />
           <Route path="/register" element={<Register setIsLoggedIn={setIsLoggedIn} />} />
-          {/* Protected routes */}
+
           <Route
             path="/courses"
             element={
@@ -129,8 +149,8 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" />} />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </Router>

@@ -4,16 +4,17 @@ import { speak } from '../utils/voiceUtils';
 
 const CourseList = () => {
   const [courses, setCourses] = useState([]);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [index, setIndex] = useState(0);
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
-        const res = await axios.get('/courses');
+        const res = await axios.get('http://localhost:5000/api/courses');
         setCourses(res.data);
-        speak(`Found ${res.data.length} courses. Say next to hear the next one, or select number to open.`);
-      } catch (err) {
+        if (res.data.length)
+          speak(`Found ${res.data.length} courses. Say next to hear each, or say open one to start.`);
+      } catch {
         speak('Error fetching courses.');
       }
     };
@@ -22,27 +23,22 @@ const CourseList = () => {
 
   useEffect(() => {
     const handleCommand = (e) => {
-      const command = e.detail;
+      const command = e.detail.toLowerCase();
       if (command.includes('next')) {
-        setSelectedIndex((prev) => {
+        setIndex((prev) => {
           const next = (prev + 1) % courses.length;
           speak(courses[next].title + '. ' + courses[next].description);
           return next;
         });
-      } else if (command.match(/select (\d+)/)) {
-        const index = parseInt(command.match(/select (\d+)/)[1]) - 1;
-        if (index < courses.length) {
-          speak(`Opening course: ${courses[index].title}`);
-          // Navigate to detail (use Router or state)
-          window.location.href = `/course/${courses[index]._id}`;
-        }
+      } else if (command.includes('open')) {
+        window.location.href = `/course/${courses[index]._id}`;
       }
     };
     window.addEventListener('voiceCommand', handleCommand);
     return () => window.removeEventListener('voiceCommand', handleCommand);
-  }, [courses]);
+  }, [courses, index]);
 
-  return <div aria-live="polite">Course List (Voice Navigation)</div>;
+  return <div aria-live="polite">Voice Course List</div>;
 };
 
 export default CourseList;

@@ -1,87 +1,65 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+// Register.js
+import React, { useRef, useState } from 'react';
+import * as faceapi from 'face-api.js';
 import axios from 'axios';
-import { speak } from '../utils/voiceUtils';
 
-const Register = ({ setIsLoggedIn }) => {
+const Register = () => {
+  const videoRef = useRef();
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [step, setStep] = useState(0); // 0: username, 1: password, 2: confirm, 3: done
-  const lastPrompt = useRef('');
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const prompt = 'Welcome to registration. Please say your desired username.';
-    speak(prompt);
-    lastPrompt.current = prompt;
+  const startVideo = async () => {
+    await navigator.mediaDevices.getUserMedia({ video: true });
+    videoRef.current.srcObject = await navigator.mediaDevices.getUserMedia({ video: true });
+  };
 
-    const handleCommand = (e) => {
-      const command = e.detail.trim();
-      if (command.includes('reset')) {
-        setUsername('');
-        setPassword('');
-        setStep(0);
-        const prompt = 'Resetting registration. Please say your desired username.';
-        speak(prompt);
-        lastPrompt.current = prompt;
-        return;
-      }
-      if (command.includes('repeat')) {
-        speak(lastPrompt.current);
-        return;
-      }
+  const loadModels = async () => {
+    const MODEL_URL = '/models'; // you’ll store models in /public/models
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+    ]);
+  };
 
-      if (step === 0) {
-        setUsername(command);
-        setStep(1);
-        const prompt = `Username set to ${command}. Please say your desired password.`;
-        speak(prompt);
-        lastPrompt.current = prompt;
-      } else if (step === 1) {
-        setPassword(command);
-        setStep(2);
-        const prompt = 'Password set. Say "register" to complete registration or "reset" to start over.';
-        speak(prompt);
-        lastPrompt.current = prompt;
-      } else if (step === 2 && command.includes('register')) {
-        handleRegister();
-      } else if (step === 2) {
-        const prompt = 'Say "register" to complete registration or "reset" to start over.';
-        speak(prompt);
-        lastPrompt.current = prompt;
-      } else if (step === 3 && command.includes('login')) {
-        speak('Navigating to login page.');
-        navigate('/login');
-      }
-    };
-
-    window.addEventListener('voiceCommand', handleCommand);
-    return () => window.removeEventListener('voiceCommand', handleCommand);
-    // eslint-disable-next-line
-  }, [step, navigate]);
+  const captureFace = async () => {
+    const detections = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+    if (!detections) {
+      alert('No face detected. Try again.');
+      return;
+    }
+    return Array.from(detections.descriptor);
+  };
 
   const handleRegister = async () => {
-    try {
-      await axios.post('/auth/register', { username, password });
-      const prompt = 'Registration successful. Please say "login" to go to the login page.';
-      speak(prompt);
-      setStep(3);
-      lastPrompt.current = prompt;
-    } catch (err) {
-      const prompt = 'Registration failed. Please try again or say "reset" to start over.';
-      speak(prompt);
-      setStep(0);
-      lastPrompt.current = prompt;
-    }
+    setLoading(true);
+    await loadModels();
+    const descriptor = await captureFace();
+    if (!descriptor) return;
+
+    await axios.post('http://localhost:5000/api/auth/register', {
+      username,
+      faceDescriptor: descriptor,
+    });
+
+    alert('Registration successful!');
+    setLoading(false);
   };
 
   return (
-    <div aria-live="polite">
-      Register Page (Voice Controlled)
-      <br />
-      <span>
-        (Say your username, then password, then "register". Say "reset" anytime to start over, or "repeat" to hear the last prompt. After successful registration, say "login" to go to the login page.)
-      </span>
+    <div>
+      <h2>Face Registration</h2>
+      <input
+        type="text"
+        placeholder="Enter username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
+      <button onClick={startVideo}>Start Camera</button>
+      <video ref={videoRef} width="320" height="240" autoPlay muted />
+      <button onClick={handleRegister} disabled={loading}>Register</button>
     </div>
   );
 };
