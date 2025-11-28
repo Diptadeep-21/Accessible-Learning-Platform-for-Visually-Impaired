@@ -1,2 +1,23 @@
-    node_modules/
-    .env
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Logs
+logs
+*.log
+debug.log
+
+# Env
+.env
+.env.local
+
+# Build
+dist/
+build/
+
+# Cache
+.cache/
+.vscode/
+.DS_Store
