@@ -1,23 +1,21 @@
-# Node
+# dependencies
 node_modules/
-npm-debug.log
-yarn-error.log
-package-lock.json
 
-# Logs
-logs
-*.log
-debug.log
-
-# Env
+# environment variables
 .env
 .env.local
+.env.development
+.env.production
 
-# Build
+# build output
 dist/
 build/
 
-# Cache
-.cache/
-.vscode/
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# system files
 .DS_Store
+Thumbs.db
