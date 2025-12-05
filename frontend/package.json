@@ -38,5 +38,14 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "overrides": {
+    "face-api.js": {
+      "source-map-loader": {
+        "ignoreWarnings": [
+          "/Failed to parse source map/"
+        ]
+      }
+    }
   }
 }

@@ -7,14 +7,26 @@ dotenv.config();
 
 router.post('/register', async (req, res) => {
   const { username, faceDescriptor } = req.body;
+
+  // Validate username
+  if (!username || typeof username !== "string") {
+    return res.status(400).json({ error: "Invalid or missing username" });
+  }
+
+  // Validate descriptor
+  if (!faceDescriptor || !Array.isArray(faceDescriptor) || faceDescriptor.length !== 128) {
+    return res.status(400).json({ error: "Invalid face descriptor" });
+  }
+
   try {
     const user = new User({ username, faceDescriptor });
     await user.save();
-    res.status(201).json({ message: 'User registered' });
+    return res.status(201).json({ message: 'User registered' });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    return res.status(400).json({ error: err.message });
   }
 });
+
 
 router.post('/face-login', async (req, res) => {
   const { username, faceDescriptor } = req.body;
