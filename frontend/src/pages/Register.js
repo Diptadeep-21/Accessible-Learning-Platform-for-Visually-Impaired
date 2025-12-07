@@ -2,9 +2,11 @@ import React, { useRef, useEffect, useState } from "react";
 import * as faceapi from "face-api.js";
 import axios from "axios";
 import { speak } from "../utils/voiceUtils";
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
   const videoRef = useRef();
+  const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
   const [uiStep, setUiStep] = useState("welcome");
@@ -21,7 +23,7 @@ const Register = () => {
   };
 
   /***********************************
-   * LOAD MODELS ONCE (VERY IMPORTANT)
+   * LOAD MODELS ONCE
    ***********************************/
   useEffect(() => {
     const loadModels = async () => {
@@ -34,10 +36,10 @@ const Register = () => {
           faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
         ]);
 
-        console.log("FACE MODELS LOADED");
         window.faceModelsLoaded = true;
+        console.log("FACE MODELS LOADED");
       } catch (err) {
-        console.error("Model load error", err);
+        console.error("Model Load Error:", err);
         speak("Face recognition models could not be loaded.");
       }
     };
@@ -90,7 +92,6 @@ const Register = () => {
 
       if (step === "welcome") {
         if (!cmd) return speak("Please say your username.");
-
         state.current.username = cmd;
         setUsername(cmd);
         setStep("confirm");
@@ -152,7 +153,6 @@ const Register = () => {
         videoRef.current.srcObject = stream;
       }
 
-      // Allow camera to settle before scanning
       setTimeout(() => {
         setStep("ready");
       }, 500);
@@ -164,7 +164,7 @@ const Register = () => {
   };
 
   /*******************************
-   * REGISTER FACE WITH RETRY
+   * REGISTER FACE (WITH RETRY)
    *******************************/
   const handleRegister = async () => {
     setLoading(true);
@@ -178,7 +178,7 @@ const Register = () => {
 
     let detection = null;
 
-    // Retry face detection 8 times (2 seconds total)
+    // Retry face detection for 2 seconds
     for (let i = 0; i < 8; i++) {
       detection = await faceapi
         .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
@@ -190,7 +190,7 @@ const Register = () => {
     }
 
     if (!detection) {
-      speak("Face not detected. Ensure your face is clearly visible. Press Enter to try again.");
+      speak("Face not detected. Ensure your face is visible. Press Enter to try again.");
       setLoading(false);
       setStep("ready");
       return;
@@ -204,11 +204,14 @@ const Register = () => {
         faceDescriptor: descriptor,
       });
 
-      speak("Registration successful. You can now log in with your face.");
+      speak("Registration successful. Redirecting to login page.");
+
       setLoading(false);
-      setStep("welcome");
-      state.current.username = "";
-      setUsername("");
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+
     } catch (err) {
       console.error("REGISTER ERROR:", err);
       speak("Registration failed. Press Enter to try again.");
@@ -244,7 +247,7 @@ const Register = () => {
         {uiStep === "confirm" && "Press 1 to confirm, 2 to retry"}
         {uiStep === "camera" && "Say: start camera"}
         {uiStep === "ready" && "Press Enter to register your face"}
-        {uiStep === "registering" && "Please wait... processing face"}
+        {uiStep === "registering" && "Processing face..."}
       </div>
     </div>
   );
