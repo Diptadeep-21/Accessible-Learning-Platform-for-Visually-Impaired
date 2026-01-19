@@ -6,7 +6,7 @@ let isListening = false;
 let onResultCallback = null;
 let spacebarPressed = false;
 
-// Initialize Speech Recognition
+// Initialize Speech Recognition.
 if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
