@@ -1,14 +1,19 @@
 // src/utils/voiceUtils.js
-// Press & Hold Spacebar to Speak — 100% WORKING, NO ERRORS
+// Stable Voice Control System for Accessible Learning Platform
 
 let recognition = null;
 let isListening = false;
 let onResultCallback = null;
 let spacebarPressed = false;
 
-// Initialize Speech Recognition.
+let keyDownHandler = null;
+let keyUpHandler = null;
+
+// ---------------- SPEECH RECOGNITION ----------------
 if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
   recognition = new SpeechRecognition();
   recognition.continuous = false;
   recognition.interimResults = false;
@@ -33,9 +38,9 @@ if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
   console.error('Speech Recognition not supported');
 }
 
-// Text-to-Speech — Exported once
+// ---------------- TEXT TO SPEECH ----------------
 export const speak = (text, onEnd = () => {}) => {
-  window.speechSynthesis.cancel();
+  window.speechSynthesis.cancel(); // Prevent overlapping speech
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'en-US';
   utterance.rate = 0.9;
@@ -45,15 +50,17 @@ export const speak = (text, onEnd = () => {}) => {
   window.speechSynthesis.speak(utterance);
 };
 
-// Internal functions
+// ---------------- LISTENING CONTROL ----------------
 const startListening = (callback) => {
   if (!recognition || isListening || !spacebarPressed) return;
+
   onResultCallback = callback;
+
   try {
     recognition.start();
     isListening = true;
   } catch (e) {
-    console.warn('Failed to start recognition');
+    console.warn('Recognition start failed');
   }
 };
 
@@ -61,14 +68,18 @@ const stopListening = () => {
   if (recognition && isListening) {
     try {
       recognition.stop();
-      isListening = false;
     } catch (e) {}
+    isListening = false;
   }
 };
 
-// Global Spacebar Handler — Exported once
+// ---------------- GLOBAL SPACEBAR HANDLER ----------------
 export const setupSpacebarListening = (onVoiceCommand) => {
-  const handleKeyDown = (e) => {
+  // Remove previous handlers safely
+  if (keyDownHandler) window.removeEventListener('keydown', keyDownHandler);
+  if (keyUpHandler) window.removeEventListener('keyup', keyUpHandler);
+
+  keyDownHandler = (e) => {
     if (e.code === 'Space' || e.key === ' ') {
       e.preventDefault();
       if (!spacebarPressed) {
@@ -79,7 +90,7 @@ export const setupSpacebarListening = (onVoiceCommand) => {
     }
   };
 
-  const handleKeyUp = (e) => {
+  keyUpHandler = (e) => {
     if (e.code === 'Space' || e.key === ' ') {
       e.preventDefault();
       spacebarPressed = false;
@@ -87,15 +98,8 @@ export const setupSpacebarListening = (onVoiceCommand) => {
     }
   };
 
-  // Remove old listeners
-  window.removeEventListener('keydown', handleKeyDown);
-  window.removeEventListener('keyup', handleKeyUp);
+  window.addEventListener('keydown', keyDownHandler);
+  window.addEventListener('keyup', keyUpHandler);
 
-  window.addEventListener('keydown', handleKeyDown);
-  window.addEventListener('keyup', handleKeyUp);
-
-  console.log('Spacebar voice control activated');
+  console.log('Voice control activated');
 };
-
-// NO DUPLICATE EXPORT LINE — THIS WAS THE PROBLEM
-// Removed: export { speak, setupSpacebarListening };
