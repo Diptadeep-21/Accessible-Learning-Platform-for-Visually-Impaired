@@ -164,10 +164,10 @@ const Login = ({ setIsLoggedIn }) => {
 
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
-        speak(`Welcome ${username}. Login successful.`);
-        setIsLoggedIn(true);
+        localStorage.setItem("name", username);
 
-        setTimeout(() => navigate("/courses"), 1500);
+        setIsLoggedIn(true);
+        navigate("/courses");
       }
     } catch {
       speak("Face not recognized. Press Enter to try again.");
