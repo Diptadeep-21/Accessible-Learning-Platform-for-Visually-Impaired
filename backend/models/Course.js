@@ -5,14 +5,36 @@ const courseSchema = new mongoose.Schema({
   description: { type: String },
   category: { type: String },
   difficulty: { type: String },
-  modules: [String], // Each item = one module's text
+
+  modules: [
+    {
+      type: String,
+      required: true
+    }
+  ],
+
   quizzes: [
     {
-      question: String,
-      options: [String],
-      answer: String
+      question: { type: String, required: true },
+      options: {
+        type: [String],
+        validate: v => v.length === 4
+      },
+      answer: { type: String, required: true }
     }
-  ]
-});
+  ],
+
+  teacher: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+
+  isApproved: {
+    type: Boolean,
+    default: true
+  }
+
+}, { timestamps: true });
 
 module.exports = mongoose.model('Course', courseSchema);
