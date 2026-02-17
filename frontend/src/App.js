@@ -15,6 +15,20 @@ import CourseDetail from './pages/CourseDetail';
 import Profile from './pages/Profile';
 import { speak, setupSpacebarListening } from './utils/voiceUtils'; // Updated import
 import axios from 'axios';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
+import TeacherDashboard from './pages/TeacherDashboard';
+
+const RoleRoute = ({ allowedRole, children }) => {
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  if (!token || role !== allowedRole) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
 
 // Set base URL for API calls
 axios.defaults.baseURL = 'http://localhost:5000/api';
@@ -51,6 +65,7 @@ const VoiceHandler = ({ setIsLoggedIn }) => {
         spoken = 'Navigating to profile.';
       } else if (command.includes('logout')) {
         localStorage.removeItem('token');
+        localStorage.removeItem('role');
         setIsLoggedIn(false);
         navigate('/');
         spoken = 'Logged out successfully.';
@@ -147,6 +162,25 @@ const App = () => {
               <ProtectedRoute isLoggedIn={isLoggedIn}>
                 <Profile />
               </ProtectedRoute>
+            }
+          />
+          <Route path="/secure-admin-login-portal-8392" element={<AdminLogin />} />
+
+          <Route
+            path="/admin-dashboard"
+            element={
+              <RoleRoute allowedRole="admin">
+                <AdminDashboard />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="/teacher-dashboard"
+            element={
+              <RoleRoute allowedRole="teacher">
+                <TeacherDashboard />
+              </RoleRoute>
             }
           />
 

@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const courseRoutes = require('./routes/courses');
+const adminRoutes = require('./routes/admin');
 
 dotenv.config();
 connectDB();
@@ -30,6 +31,7 @@ app.post('/debug', (req, res) => {
 // ✅ Actual routes
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ✅ Root test endpoint
 app.get('/', (req, res) => res.send('API running...'));

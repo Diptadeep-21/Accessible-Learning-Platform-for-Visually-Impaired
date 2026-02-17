@@ -8,12 +8,15 @@ const Login = ({ setIsLoggedIn }) => {
   const videoRef = useRef();
   const navigate = useNavigate();
 
-  // UI state only
+  const [role, setRole] = useState("student"); // NEW
+
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");      // Teacher/Admin
+  const [password, setPassword] = useState(""); // Teacher/Admin
+
   const [uiStep, setUiStep] = useState("welcome");
   const [loading, setLoading] = useState(false);
 
-  // Synchronous state machine
   const state = useRef({
     step: "welcome",
     username: "",
@@ -24,10 +27,13 @@ const Login = ({ setIsLoggedIn }) => {
     setUiStep(step);
   };
 
-  // ------------------------
-  // SPEAK ON STEP CHANGE
-  // ------------------------
+  /*************************************************
+   **************** STUDENT LOGIN ******************
+   *************************************************/
+
   useEffect(() => {
+    if (role !== "student") return;
+
     const step = state.current.step;
 
     if (step === "welcome")
@@ -44,20 +50,16 @@ const Login = ({ setIsLoggedIn }) => {
 
     if (step === "scanning")
       speak("Scanning. Please stay still.");
-  }, [uiStep]);
+  }, [uiStep, role]);
 
-  // ------------------------
-  // VOICE COMMAND HANDLING
-  // ------------------------
   useEffect(() => {
+    if (role !== "student") return;
+
     const listener = (e) => {
       const raw = e.detail || "";
       const cmd = raw.trim().toLowerCase();
       const step = state.current.step;
 
-      console.log("VOICE:", cmd, "STEP:", step);
-
-      // Username input
       if (step === "welcome") {
         if (!cmd) return speak("Say your username.");
         state.current.username = cmd;
@@ -66,58 +68,43 @@ const Login = ({ setIsLoggedIn }) => {
         return;
       }
 
-      // Start camera
       if (step === "camera") {
-        if (cmd.includes("start camera")) {
-          startCamera();
-        } else {
-          speak("Say start camera to continue.");
-        }
-        return;
+        if (cmd.includes("start camera")) startCamera();
+        else speak("Say start camera to continue.");
       }
     };
 
     window.addEventListener("voiceCommand", listener);
     return () => window.removeEventListener("voiceCommand", listener);
-  }, []);
+  }, [role]);
 
-  // ------------------------
-  // KEYBOARD CONFIRMATION
-  // ------------------------
   useEffect(() => {
+    if (role !== "student") return;
+
     const handler = (e) => {
       const step = state.current.step;
 
-      // Confirm username
       if (step === "confirm") {
-        if (e.key === "1") {
-          setStep("camera"); // confirmed
-          return;
-        }
+        if (e.key === "1") setStep("camera");
         if (e.key === "2") {
           state.current.username = "";
           setUsername("");
           setStep("welcome");
-          return;
         }
       }
 
-      // Scan face
       if (step === "ready" && e.key === "Enter") {
         setStep("scanning");
-        handleLogin();
+        handleStudentLogin();
       }
     };
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [role]);
 
-  // ------------------------
-  // START CAMERA
-  // ------------------------
   const startCamera = async () => {
-    speak("Starting your camera. Please wait.");
+    speak("Starting your camera.");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       videoRef.current.srcObject = stream;
@@ -130,15 +117,12 @@ const Login = ({ setIsLoggedIn }) => {
 
       setStep("ready");
     } catch {
-      speak("Camera error. Please allow permission and retry.");
+      speak("Camera error. Please allow permission.");
       setStep("welcome");
     }
   };
 
-  // ------------------------
-  // FACE LOGIN
-  // ------------------------
-  const handleLogin = async () => {
+  const handleStudentLogin = async () => {
     setLoading(true);
     const username = state.current.username;
 
@@ -164,47 +148,108 @@ const Login = ({ setIsLoggedIn }) => {
 
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
-        localStorage.setItem("name", username);
+        localStorage.setItem("role", "student");
 
         setIsLoggedIn(true);
         navigate("/courses");
       }
     } catch {
-      speak("Face not recognized. Press Enter to try again.");
+      speak("Face not recognized. Try again.");
       setStep("ready");
     }
 
     setLoading(false);
   };
 
+  /*************************************************
+   **************** TEACHER LOGIN ******************
+   *************************************************/
+
+  const handleTeacherLogin = async () => {
+    if (!email || !password) {
+      alert("Email and password required");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await axios.post("http://localhost:5000/api/auth/login", {
+        email,
+        password,
+      });
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("role", res.data.role);
+
+      setIsLoggedIn(true);
+
+      // Role based redirect
+      if (res.data.role === "admin")
+        navigate("/admin-dashboard");
+      else if (res.data.role === "teacher")
+        navigate("/teacher-dashboard");
+      else
+        navigate("/courses");
+
+    } catch (err) {
+      alert(err.response?.data?.error || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /*************************************************
+   ********************* UI ***********************
+   *************************************************/
+
   return (
     <div style={{ textAlign: "center", padding: 40 }}>
-      <h1>Accessible Face + Voice Login</h1>
+      <h1>Login</h1>
 
-      {state.current.username && uiStep === "confirm" && (
-        <div style={{ background: "#fff3cd", padding: 20, borderRadius: 12 }}>
-          <p>You said: <strong>{state.current.username}</strong></p>
-          <p>Press <strong>1</strong> to confirm or <strong>2</strong> to retry</p>
-        </div>
+      {/* ROLE SELECTOR */}
+      <div style={{ marginBottom: 20 }}>
+        <button onClick={() => setRole("student")}>Student</button>
+        <button onClick={() => setRole("teacher")}>Teacher</button>
+      </div>
+
+      {role === "student" && (
+        <>
+          <video
+            ref={videoRef}
+            width="560"
+            height="420"
+            autoPlay
+            muted
+            style={{ borderRadius: 20, marginTop: 30 }}
+          />
+          {loading && <p>Scanning face...</p>}
+        </>
       )}
 
-      <video
-        ref={videoRef}
-        width="560"
-        height="420"
-        autoPlay
-        muted
-        style={{ borderRadius: 20, marginTop: 30 }}
-      />
+      {role === "teacher" && (
+        <div style={{ maxWidth: 300, margin: "0 auto" }}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{ display: "block", width: "100%", marginBottom: 10 }}
+          />
 
-      {loading && <p style={{ fontSize: "1.4em", color: "#ff6b00" }}>Scanning face...</p>}
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{ display: "block", width: "100%", marginBottom: 10 }}
+          />
 
-      <div style={{ marginTop: 20, fontSize: "1.1em" }}>
-        {uiStep === "welcome" && "Hold spacebar → Say your username"}
-        {uiStep === "confirm" && "Press 1 to confirm, 2 to retry"}
-        {uiStep === "camera" && "Say: start camera"}
-        {uiStep === "ready" && "Press Enter to login"}
-      </div>
+          <button onClick={handleTeacherLogin}>
+            {loading ? "Logging in..." : "Login as Teacher"}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
