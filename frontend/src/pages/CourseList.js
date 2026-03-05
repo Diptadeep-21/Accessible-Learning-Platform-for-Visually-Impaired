@@ -1,26 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { speak } from "../utils/voiceUtils";
 
-const normalizeCommand = (cmd) => {
-  const c = cmd.toLowerCase().trim();
-
-  if (c.includes("list") || c.includes("show")) return "list";
-  if (c.includes("next")) return "next";
-  if (c.includes("previous") || c.includes("back")) return "previous";
-  if (c.includes("details") || c.includes("info")) return "details";
-  if (c.includes("progress") || c.includes("status")) return "progress";
-  if (c.includes("open") || c.includes("start")) return "open";
-  if (c.includes("help")) return "help";
-  if (c.includes("where")) return "where";
-
-  return "unknown";
-};
+import { speak, setupSpacebarListening, removeSpacebarListening } from "../utils/voiceUtils";
+import { normalizeCommand } from "../utils/commandUtils";
 
 const CourseList = () => {
+
   const [courses, setCourses] = useState([]);
   const [index, setIndex] = useState(0);
+
   const indexRef = useRef(0);
   const navigate = useNavigate();
 
@@ -30,8 +19,11 @@ const CourseList = () => {
 
   // ---------------- FETCH COURSES ----------------
   useEffect(() => {
+
     const fetchCourses = async () => {
+
       try {
+
         axios.defaults.headers.common["Authorization"] =
           `Bearer ${localStorage.getItem("token")}`;
 
@@ -39,115 +31,133 @@ const CourseList = () => {
           "http://localhost:5000/api/courses"
         );
 
-        setCourses(res.data);
+        const approvedCourses = res.data.filter(c => c.isApproved);
 
-        if (res.data.length > 0) {
+        setCourses(approvedCourses);
+
+        if (approvedCourses.length > 0) {
+
           const userName = localStorage.getItem("name") || "Student";
 
+          const courseNames = approvedCourses
+            .map((c, i) => `${i + 1}. ${c.title}`)
+            .join(", ");
+
           speak(
-            `Welcome ${userName}. ` +
-              `You have ${res.data.length} courses available. ` +
-              `Currently selected course is ${res.data[0].title}. ` +
-              `Say next to browse courses, details to hear more, ` +
-              `open to start the course, or say help.`
+            `Welcome ${userName}. 
+            You have ${approvedCourses.length} courses available. 
+            The courses are ${courseNames}. 
+            Currently selected course is ${approvedCourses[0].title}. 
+            Press spacebar and say next or details or open.`
           );
+
         } else {
-          speak("No courses available at the moment.");
+          speak("No courses available.");
         }
-      } catch {
+
+      } catch (error) {
         speak("Error fetching courses.");
       }
+
     };
 
     fetchCourses();
+
   }, []);
 
-  // ---------------- LISTEN TO GLOBAL VOICE ----------------
+  // ---------------- VOICE COMMAND HANDLER ----------------
   useEffect(() => {
-    const handleVoiceCommand = (event) => {
+
+    const handleVoiceCommand = (transcript) => {
+
       if (!courses.length) return;
 
-      const transcript = event.detail;
       const action = normalizeCommand(transcript);
-      const currentCourse = courses[indexRef.current];
+
+      const currentIndex = indexRef.current;
+      const currentCourse = courses[currentIndex];
 
       switch (action) {
+
         case "list":
-          speak(
-            `${currentCourse.title}. ${currentCourse.description || "No description available."}`
-          );
+
+          const names = courses
+            .map((c, i) => `${i + 1}. ${c.title}`)
+            .join(", ");
+
+          speak(`Available courses are ${names}`);
           break;
 
         case "next":
-          const nextIndex = (indexRef.current + 1) % courses.length;
-          setIndex(nextIndex);
-          speak(
-            `Now selected: ${courses[nextIndex].title}`
-          );
-          break;
 
-        case "previous":
-          const prevIndex =
-            (indexRef.current - 1 + courses.length) %
-            courses.length;
-          setIndex(prevIndex);
-          speak(
-            `Now selected: ${courses[prevIndex].title}`
-          );
+          const nextIndex = (currentIndex + 1) % courses.length;
+
+          setIndex(nextIndex);
+
+          speak(`Now selected ${courses[nextIndex].title}`);
           break;
 
         case "details":
+
           speak(
-            `${currentCourse.title}. ` +
-              `This course contains ${currentCourse.modules?.length || 0} modules ` +
-              `and ${currentCourse.quizzes?.length || 0} quizzes.`
+            `${currentCourse.title}. 
+            ${currentCourse.description || "No description available."}. 
+            This course has ${currentCourse.modules?.length || 0} modules 
+            and ${currentCourse.quizzes?.length || 0} quizzes.`
           );
           break;
 
         case "progress":
+
           speak(
             `You have not started ${currentCourse.title} yet.`
           );
           break;
 
         case "open":
+
           speak(`Opening ${currentCourse.title}`);
+
           navigate(`/course/${currentCourse._id}`);
           break;
 
-        case "help":
-          speak(
-            `You are on the course list page. ` +
-              `Say next, previous, details, open, or where.`
-          );
+        case "quiz":
+
+          speak(`Starting quiz for ${currentCourse.title}`);
+
+          navigate(`/course/${currentCourse._id}/quiz`);
           break;
 
-        case "where":
+        case "repeat":
+
           speak(
-            `You are on the course list page. ` +
-              `Selected course is ${currentCourse.title}.`
+            `Currently selected course is ${currentCourse.title}. 
+            Press space and say next, details, open, or quiz.`
           );
           break;
 
         default:
-          speak(
-            `Command not recognized. Say help for available commands.`
-          );
+
+          speak("Command not recognized. Please try again.");
       }
+
     };
 
-    window.addEventListener("voiceCommand", handleVoiceCommand);
+    // Activate spacebar listening
+    setupSpacebarListening(handleVoiceCommand);
 
     return () => {
-      window.removeEventListener("voiceCommand", handleVoiceCommand);
+      removeSpacebarListening();
     };
+
   }, [courses, navigate]);
 
   return (
     <div aria-live="assertive" role="status">
-      Course List Voice Mode Active
+      Voice Accessible Course List Active
     </div>
   );
+
 };
 
 export default CourseList;
