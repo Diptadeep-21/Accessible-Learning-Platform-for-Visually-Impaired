@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -18,16 +18,19 @@ import Profile from "./pages/Profile";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import TeacherDashboard from "./pages/TeacherDashboard";
+import VoiceFeedback from "./components/VoiceFeedback";
 
-//import { speak, setupSpacebarListening } from "./utils/voiceUtils";
 import axios from "axios";
-import { speak, setupSpacebarListening, removeSpacebarListening } from "./utils/voiceUtils";
+import {
+  speak,
+  setupSpacebarListening,
+  removeSpacebarListening,
+} from "./utils/voiceUtils";
 
-// Set base URL
+// Base URL
 axios.defaults.baseURL = "http://localhost:5000/api";
 
 /* ================= ROLE ROUTE ================= */
-
 const RoleRoute = ({ allowedRole, children }) => {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -40,167 +43,172 @@ const RoleRoute = ({ allowedRole, children }) => {
 };
 
 /* ================= PROTECTED ROUTE ================= */
-
 const ProtectedRoute = ({ isLoggedIn, children }) => {
   return isLoggedIn ? children : <Navigate to="/login" replace />;
 };
 
-/* ================= VOICE HANDLER ================= */
-
+/* ================= GLOBAL VOICE HANDLER ================= */
 const VoiceHandler = ({ setIsLoggedIn }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const lastCommandRef = useRef("");
 
- React.useEffect(() => {
-  const role = localStorage.getItem("role");
+  useEffect(() => {
+    const role = localStorage.getItem("role");
 
-  const isTeacherDashboard =
-    role === "teacher" &&
-    location.pathname.startsWith("/teacher-dashboard");
+    const isTeacherDashboard =
+      role === "teacher" &&
+      location.pathname.startsWith("/teacher-dashboard");
 
-  const isAdminDashboard =
-    role === "admin" &&
-    location.pathname.startsWith("/admin-dashboard");
+    const isAdminDashboard =
+      role === "admin" &&
+      location.pathname.startsWith("/admin-dashboard");
 
-  // 🚫 Disable voice completely on teacher/admin dashboards
-  if (isTeacherDashboard || isAdminDashboard) {
-    removeSpacebarListening(); // 🔥 IMPORTANT FIX
-    return;
-  }
-
-  const handleVoiceCommand = (command) => {
-    command = command.trim().toLowerCase();
-    lastCommandRef.current = command;
-
-    let spoken = "";
-
-    window.dispatchEvent(
-      new CustomEvent("voiceCommand", { detail: command })
-    );
-
-    if (command.includes("help")) {
-      spoken =
-        "Available commands: home, login, register, courses, profile, logout, repeat.";
-    } else if (command.includes("home")) {
-      navigate("/");
-      spoken = "Navigating to home.";
-    } else if (command.includes("login")) {
-      navigate("/login");
-      spoken = "Navigating to login.";
-    } else if (command.includes("register")) {
-      navigate("/register");
-      spoken = "Navigating to register.";
-    } else if (command.includes("courses")) {
-      navigate("/courses");
-      spoken = "Navigating to courses.";
-    } else if (command.includes("profile")) {
-      navigate("/profile");
-      spoken = "Navigating to profile.";
-    } else if (command.includes("logout")) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      setIsLoggedIn(false);
-      navigate("/");
-      spoken = "Logged out successfully.";
-    } else if (command.includes("repeat")) {
-      spoken = lastCommandRef.current
-        ? `Repeating: ${lastCommandRef.current}`
-        : "No previous command to repeat.";
-    } else {
-      spoken = `Command not recognized: ${command}`;
+    // 🚫 Disable voice on dashboards
+    if (isTeacherDashboard || isAdminDashboard) {
+      removeSpacebarListening();
+      return;
     }
 
-    speak(`You said: ${command}. ${spoken}`);
-  };
+    const handleVoiceCommand = (command) => {
+      command = command.trim().toLowerCase();
+      lastCommandRef.current = command;
 
-  setupSpacebarListening(handleVoiceCommand);
+      let spoken = "";
 
-  if (location.pathname === "/") {
-    speak(
-      "Welcome to Accessible Learning Platform. Hold spacebar and speak to navigate."
-    );
-  }
+      // Broadcast to child components
+      window.dispatchEvent(
+        new CustomEvent("voiceCommand", { detail: command })
+      );
 
-  // 🧹 CLEANUP when route changes
-  return () => {
-    removeSpacebarListening();
-  };
+      if (command.includes("help")) {
+        spoken =
+          "Available commands: home, login, register, courses, profile, logout, repeat.";
+      } else if (command.includes("home")) {
+        navigate("/");
+        spoken = "Navigating to home.";
+      } else if (command.includes("login")) {
+        navigate("/login");
+        spoken = "Navigating to login.";
+      } else if (command.includes("register")) {
+        navigate("/register");
+        spoken = "Navigating to register.";
+      } else if (command.includes("courses")) {
+        navigate("/courses");
+        spoken = "Navigating to courses.";
+      } else if (command.includes("profile")) {
+        navigate("/profile");
+        spoken = "Navigating to profile.";
+      } else if (command.includes("logout")) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        setIsLoggedIn(false);
+        navigate("/");
+        spoken = "Logged out successfully.";
+      } else if (command.includes("repeat")) {
+        spoken = lastCommandRef.current
+          ? `Repeating: ${lastCommandRef.current}`
+          : "No previous command.";
+      } else {
+        spoken = `Command not recognized: ${command}`;
+      }
 
-}, [navigate, setIsLoggedIn, location.pathname]);
+      speak(spoken);
+    };
+
+    setupSpacebarListening(handleVoiceCommand);
+
+    return () => {
+      removeSpacebarListening();
+    };
+  }, [navigate, setIsLoggedIn, location.pathname]);
 
   return null;
 };
 
 /* ================= LAYOUT ================= */
-
 const Layout = ({ setIsLoggedIn }) => (
   <div role="main" aria-label="Accessible Learning Platform">
     <VoiceHandler setIsLoggedIn={setIsLoggedIn} />
+
+    <VoiceFeedback />
+
     <h1 hidden>Accessible Learning Platform for the Blind</h1>
     <Outlet />
   </div>
 );
 
 /* ================= APP ================= */
-
+// ================= APP =================
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(
     !!localStorage.getItem("token")
   );
+
   const [speechReady, setSpeechReady] = useState(false);
 
+  // 🔥 ACTIVATION (ONLY AFTER USER INTERACTION)
+  useEffect(() => {
+    const handleStartKey = (e) => {
+      // ✅ Allow ANY key (better for accessibility)
+      if (!speechReady) {
+        speak(
+          "Voice control activated. Hold spacebar and speak commands."
+        );
+
+        setSpeechReady(true);
+        window.removeEventListener("keydown", handleStartKey);
+      }
+    };
+
+    window.addEventListener("keydown", handleStartKey);
+
+    return () => {
+      window.removeEventListener("keydown", handleStartKey);
+    };
+  }, [speechReady]);
+
+  /* ---------- ACCESSIBLE LANDING SCREEN ---------- */
   if (!speechReady) {
     return (
       <div
+        tabIndex="0"
+        autoFocus   // 🔥 ensures screen reader reads immediately
+        role="alert"
+        aria-live="assertive"
         style={{
           textAlign: "center",
           marginTop: "20vh",
           fontFamily: "Arial, sans-serif",
         }}
       >
-        <h1>Welcome to Accessible Learning Platform</h1>
-        <p>
-          Hold{" "}
-          <kbd
-            style={{
-              padding: "0.2em 0.4em",
-              background: "#eee",
-              borderRadius: "4px",
-            }}
-          >
-            Spacebar
-          </kbd>{" "}
-          and speak to control the app
-        </p>
-        <button
-          onClick={() => setSpeechReady(true)}
-          style={{
-            fontSize: "1.8rem",
-            padding: "1rem 2rem",
-            margin: "2rem",
-            background: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-          }}
-        >
-          Start Voice Control
-        </button>
+        <h1>Accessible Learning Platform</h1>
+
+        <p>Press ANY KEY to start voice control</p>
+
+        {/* 🔥 Screen reader will read this automatically */}
+        <span style={{ position: "absolute", left: "-9999px" }}>
+          Welcome to Accessible Learning Platform.
+          Press any key to activate voice control.
+          After that, hold spacebar and speak commands.
+        </span>
       </div>
     );
   }
 
+  /* ---------- MAIN APP ---------- */
   return (
     <Router>
       <Routes>
         <Route element={<Layout setIsLoggedIn={setIsLoggedIn} />}>
+
           <Route path="/" element={<Home />} />
+
           <Route
             path="/login"
             element={<Login setIsLoggedIn={setIsLoggedIn} />}
           />
+
           <Route
             path="/register"
             element={<Register setIsLoggedIn={setIsLoggedIn} />}
@@ -257,6 +265,7 @@ const App = () => {
           />
 
           <Route path="*" element={<Navigate to="/" replace />} />
+
         </Route>
       </Routes>
     </Router>
