@@ -10,6 +10,19 @@ This project aims to bridge the digital learning gap by providing an **inclusive
 
 ---
 
+## 🖼️ Screenshots
+
+### 🔹 Landing Page
+![Landing Page](screenshots/landing-pg.png)
+
+### 🔹 Teacher Upload Dashboard
+![Teacher Upload](screenshots/teacher-uploads.png)
+
+### 🔹 Admin Dashboard
+![Admin Dashboard](screenshots/admin-dashboard.png)
+
+---
+
 ## 🚀 Key Features
 
 ### 🗣️ Voice-Based Navigation
@@ -50,22 +63,132 @@ This project aims to bridge the digital learning gap by providing an **inclusive
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** React.js, Tailwind CSS  
-- **Backend:** Node.js, Express.js  
-- **Database:** MongoDB  
-- **APIs & Tools:**  
-  - Web Speech API (Voice Recognition & Synthesis)  
-  - Face Recognition APIs  
-  - AI/NLP APIs (for summarization)  
+**Frontend**
+- React.js
+- Tailwind CSS
+
+**Backend**
+- Node.js
+- Express.js
+
+**Database**
+- MongoDB
+
+**APIs & Tools**
+- Web Speech API (Voice Recognition & Synthesis)  
+- Face Recognition APIs  
+- AI/NLP APIs (for summarization)  
+
+---
+
+## 📂 Project Structure
+
+```
+Accessible-Learning-Platform/
+│
+├── backend/
+│   ├── config/
+│   │   └── db.js
+│   ├── models/
+│   │   ├── Course.js
+│   │   └── User.js
+│   ├── routes/
+│   │   ├── admin.js
+│   │   ├── aiRoutes.js
+│   │   ├── auth.js
+│   │   └── courses.js
+│   └── services/
+│       └── aiService.js
+│
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   │   └── hero1.png
+│   │   ├── components/
+│   │   │   ├── AdminSidebar.jsx
+│   │   │   ├── AIAssistant.jsx
+│   │   │   └── VoiceFeedback.jsx
+│   │   ├── pages/
+│   │   │   ├── Home.js
+│   │   │   ├── Login.js
+│   │   │   ├── Register.jsx
+│   │   │   ├── CourseList.js
+│   │   │   ├── CourseDetail.js
+│   │   │   ├── Profile.js
+│   │   │   ├── AdminDashboard.jsx
+│   │   │   ├── TeacherDashboard.jsx
+│   │   │   ├── ApproveCourses.jsx
+│   │   │   ├── ApproveTeachers.jsx
+│   │   │   └── ManageUsers.jsx
+│   │   ├── utils/
+│   │   │   ├── commandUtils.js
+│   │   │   └── voiceUtils.js
+│   │   ├── App.js
+│   │   └── index.js
+│
+├── screenshots/
+│   ├── landing-pg.png
+│   ├── teacher-uploads.png
+│   └── admin-dashboard.png
+│
+└── README.md
+```
 
 ---
 
 ## 🧠 Key Highlights
 
-- Built with a focus on **accessibility-first design**
-- Implements **voice-driven UX** for real-world usability
-- Combines **AI + Assistive Technology**
-- Demonstrates **full-stack development + innovation**
-- Solves a **meaningful social problem**
+- Accessibility-first design
+- Voice-driven user experience
+- AI + Assistive Technology integration
+- Full-stack MERN implementation
+- Solves a real-world inclusion problem
 
 ---
+
+## ▶️ Getting Started
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/your-username/accessible-learning-platform.git
+cd accessible-learning-platform
+```
+
+### 2. Install Dependencies
+
+#### Backend
+```bash
+cd backend
+npm install
+npm start
+```
+
+#### Frontend
+```bash
+cd frontend
+npm install
+npm start
+```
+
+---
+
+## 🚀 Future Improvements
+
+- Real-time voice feedback UI
+- Advanced AI tutoring system
+- Mobile accessibility optimization
+- Multi-language voice support
+
+---
+
+## 👨‍💻 Author
+
+**Diptadeep Sinha**  
+B.Tech CSE, KIIT University  
+
+---
+
+## ⭐
+
+If you find this project useful, consider giving it a ⭐ on GitHub!
