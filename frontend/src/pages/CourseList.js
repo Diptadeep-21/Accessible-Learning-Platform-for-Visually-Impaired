@@ -94,7 +94,8 @@ const CourseList = () => {
 
           setIndex(nextIndex);
 
-          speak(`Now selected ${courses[nextIndex].title}`);
+          speak(`Now selected ${courses[nextIndex].title}.
+            Press space and say open for details`);
           break;
 
         case "details":
