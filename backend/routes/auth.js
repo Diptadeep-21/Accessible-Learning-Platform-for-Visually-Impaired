@@ -25,6 +25,27 @@ router.post('/student-register', async (req, res) => {
       return res.status(400).json({ error: "Username already exists" });
     }
 
+    // ✅ ADD THE DUPLICATE FACE CHECK RIGHT HERE
+    const allStudents = await User.find({ 
+      role: 'student', 
+      faceDescriptor: { $exists: true, $ne: [] } 
+    });
+
+    for (const existingStudent of allStudents) {
+      const distance = Math.sqrt(
+        existingStudent.faceDescriptor.reduce(
+          (sum, val, i) => sum + Math.pow(val - faceDescriptor[i], 2), 0
+        )
+      );
+
+      if (distance < 0.45) {
+        return res.status(400).json({ 
+          error: 'This face is already registered to an existing account' 
+        });
+      }
+    }
+    // ✅ END OF DUPLICATE FACE CHECK
+
     const user = new User({
       username,
       faceDescriptor,
@@ -81,7 +102,7 @@ router.post('/face-login', async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    res.json({ token, role: user.role });
+    res.json({ token, role: user.role,  username: user.username });
 
   } catch (err) {
     res.status(500).json({ error: 'Server error' });

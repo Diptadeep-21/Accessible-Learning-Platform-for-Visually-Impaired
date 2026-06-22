@@ -51,77 +51,130 @@ const ProtectedRoute = ({ isLoggedIn, children }) => {
 const VoiceHandler = ({ setIsLoggedIn }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // ✅ Use refs so the callback always has fresh values
+  // without needing to re-register the spacebar listener
+  const navigateRef = useRef(navigate);
+  const locationRef = useRef(location.pathname);
+  const setIsLoggedInRef = useRef(setIsLoggedIn);
   const lastCommandRef = useRef("");
 
+  // Keep refs in sync on every render — no re-registration needed
   useEffect(() => {
-    const role = localStorage.getItem("role");
+    navigateRef.current = navigate;
+  }, [navigate]);
 
-    const isTeacherDashboard =
-      role === "teacher" &&
-      location.pathname.startsWith("/teacher-dashboard");
+  useEffect(() => {
+    locationRef.current = location.pathname;
+  }, [location.pathname]);
 
-    const isAdminDashboard =
-      role === "admin" &&
-      location.pathname.startsWith("/admin-dashboard");
+  useEffect(() => {
+    setIsLoggedInRef.current = setIsLoggedIn;
+  }, [setIsLoggedIn]);
 
-    // 🚫 Disable voice on dashboards
-    if (isTeacherDashboard || isAdminDashboard) {
-      removeSpacebarListening();
-      return;
-    }
-
+  // ✅ Register spacebar listener ONCE — never re-register
+  useEffect(() => {
     const handleVoiceCommand = (command) => {
-      command = command.trim().toLowerCase();
-      lastCommandRef.current = command;
+  command = command.trim().toLowerCase();
 
-      let spoken = "";
+  const currentPath = locationRef.current;
+  const currentRole = localStorage.getItem("role");
 
-      // Broadcast to child components
-      window.dispatchEvent(
-        new CustomEvent("voiceCommand", { detail: command })
-      );
+  const isTeacherDashboard =
+    currentRole === "teacher" && currentPath.startsWith("/teacher-dashboard");
+  const isAdminDashboard =
+    currentRole === "admin" && currentPath.startsWith("/admin-dashboard");
 
-      if (command.includes("help")) {
-        spoken =
-          "Available commands: home, login, register, courses, profile, logout, repeat.";
-      } else if (command.includes("home")) {
-        navigate("/");
-        spoken = "Navigating to home.";
-      } else if (command.includes("login")) {
-        navigate("/login");
-        spoken = "Navigating to login.";
-      } else if (command.includes("register")) {
-        navigate("/register");
-        spoken = "Navigating to register.";
-      } else if (command.includes("courses")) {
-        navigate("/courses");
-        spoken = "Navigating to courses.";
-      } else if (command.includes("profile")) {
-        navigate("/profile");
-        spoken = "Navigating to profile.";
-      } else if (command.includes("logout")) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        setIsLoggedIn(false);
-        navigate("/");
-        spoken = "Logged out successfully.";
-      } else if (command.includes("repeat")) {
-        spoken = lastCommandRef.current
-          ? `Repeating: ${lastCommandRef.current}`
-          : "No previous command.";
-      } else {
-        spoken = `Command not recognized: ${command}`;
-      }
+  if (isTeacherDashboard || isAdminDashboard) return;
 
-      speak(spoken);
-    };
+  lastCommandRef.current = command;
 
+  // ✅ GLOBAL COMMANDS — handle FIRST, before dispatching to children
+  let spoken = "";
+
+  if (command.includes("help")) {
+    spoken =
+      "Available commands are: " +
+      "Say home to go to the home page. " +
+      "Say login to go to the login page. " +
+      "Say register to create an account. " +
+      "Say courses to view your courses. " +
+      "Say profile to view your profile. " +
+      "Say logout to log out. " +
+      "To use any command, hold spacebar and speak, then release.";
+    speak(spoken);
+    return; // ✅ don't dispatch to children
+  }
+
+  if (command.includes("logout")) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("username");
+    setIsLoggedInRef.current(false);
+    navigateRef.current("/");
+    speak("Logged out successfully.");
+    return;
+  }
+
+  if (command.includes("home")) {
+    navigateRef.current("/");
+    speak("Navigating to home.");
+    return;
+  }
+
+  if (command.includes("login")) {
+    navigateRef.current("/login");
+    speak("Navigating to login.");
+    return;
+  }
+
+  if (command.includes("register")) {
+    navigateRef.current("/register");
+    speak("Navigating to register.");
+    return;
+  }
+
+  if (command.includes("courses")) {
+    navigateRef.current("/courses");
+    speak("Navigating to courses.");
+    return;
+  }
+
+  if (command.includes("profile")) {
+    navigateRef.current("/profile");
+    speak("Navigating to profile.");
+    return;
+  }
+
+  if (command.includes("repeat")) {
+    speak(
+      lastCommandRef.current
+        ? `Last command was: ${lastCommandRef.current}`
+        : "No previous command."
+    );
+    return;
+  }
+
+  // ✅ Only dispatch to children for page-specific commands
+  const voiceEvent = new CustomEvent("voiceCommand", {
+    detail: command,
+    cancelable: true,
+  });
+  const notHandledByChild = window.dispatchEvent(voiceEvent);
+
+  if (notHandledByChild) {
+    // Child didn't handle it either
+    speak(`Command not recognized: ${command}`);
+  }
+};
+
+    // ✅ Register ONCE — empty dependency array
     setupSpacebarListening(handleVoiceCommand);
 
     return () => {
       removeSpacebarListening();
     };
-  }, [navigate, setIsLoggedIn, location.pathname]);
+  }, []); // ← empty array — never re-registers
 
   return null;
 };
@@ -150,22 +203,49 @@ const App = () => {
   // 🔥 ACTIVATION (ONLY AFTER USER INTERACTION)
   useEffect(() => {
     const handleStartKey = (e) => {
-      // ✅ Allow ANY key (better for accessibility)
-      if (!speechReady) {
-        speak(
-          "Voice control activated. Hold spacebar and speak commands."
-        );
+      if (speechReady) return;
 
-        setSpeechReady(true);
-        window.removeEventListener("keydown", handleStartKey);
+      // ✅ Step 1 — Play a beep using Web Audio API
+      // This works immediately on user gesture with no prior setup
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);       // high beep
+        oscillator.frequency.setValueAtTime(660, audioCtx.currentTime + 0.1); // lower beep
+
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.3);
+      } catch (err) {
+        console.warn("Audio beep failed:", err);
       }
+
+      // ✅ Step 2 — Speak full instructions AFTER the beep (small delay)
+      setTimeout(() => {
+        speak(
+          "Welcome to the Accessible Learning Platform. " +
+          "Voice control is now active. " +
+          "To give a command, hold the spacebar and speak. " +
+          "Release the spacebar when done. " +
+          "Say help at any time to hear available commands."
+        );
+      }, 350); // wait for beep to finish
+
+      setSpeechReady(true);
+      window.removeEventListener("keydown", handleStartKey);
     };
 
     window.addEventListener("keydown", handleStartKey);
-
-    return () => {
-      window.removeEventListener("keydown", handleStartKey);
-    };
+    return () => window.removeEventListener("keydown", handleStartKey);
   }, [speechReady]);
 
   /* ---------- ACCESSIBLE LANDING SCREEN ---------- */
@@ -173,9 +253,10 @@ const App = () => {
     return (
       <div
         tabIndex="0"
-        autoFocus   // 🔥 ensures screen reader reads immediately
+        autoFocus
         role="alert"
         aria-live="assertive"
+        aria-label="Accessible Learning Platform. Press any key to activate voice control."
         style={{
           textAlign: "center",
           marginTop: "20vh",
@@ -183,15 +264,23 @@ const App = () => {
         }}
       >
         <h1>Accessible Learning Platform</h1>
-
         <p>Press ANY KEY to start voice control</p>
 
-        {/* 🔥 Screen reader will read this automatically */}
-        <span style={{ position: "absolute", left: "-9999px" }}>
-          Welcome to Accessible Learning Platform.
-          Press any key to activate voice control.
-          After that, hold spacebar and speak commands.
-        </span>
+        {/* Visible blinking cue for low-vision users */}
+        <p style={{
+          fontSize: 14,
+          color: "#666",
+          animation: "blink 1.5s ease-in-out infinite"
+        }}>
+          🔊 Voice instructions will begin after you press any key
+        </p>
+
+        <style>{`
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+      `}</style>
       </div>
     );
   }
