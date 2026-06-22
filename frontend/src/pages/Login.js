@@ -74,7 +74,30 @@ const Login = ({ setIsLoggedIn }) => {
       }
     };
 
-    window.addEventListener("voiceCommand", listener);
+    // In Login.jsx — voice listener
+    window.addEventListener("voiceCommand", (e) => {
+      const cmd = e.detail || "";
+      const step = state.current.step;
+
+      if (step === "welcome") {
+        if (!cmd) return speak("Say your username.");
+        e.preventDefault(); // ← I handled this, stop App.js from also processing it
+        state.current.username = cmd;
+        setUsername(cmd);
+        setStep("confirm");
+        return;
+      }
+
+      if (step === "camera") {
+        if (cmd.includes("start camera")) {
+          e.preventDefault(); // ← handled
+          startCamera();
+        } else {
+          e.preventDefault(); // ← still handled (wrong command, but we gave feedback)
+          speak("Say start camera to continue.");
+        }
+      }
+    });
     return () => window.removeEventListener("voiceCommand", listener);
   }, [role]);
 
@@ -127,10 +150,17 @@ const Login = ({ setIsLoggedIn }) => {
     const username = state.current.username;
 
     try {
-      const detection = await faceapi
-        .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+      // BEFORE: single detectSingleFace call
+      // AFTER: up to 8 attempts with 250ms gaps (same as Register.jsx)
+      let detection = null;
+      for (let i = 0; i < 8; i++) {
+        detection = await faceapi
+          .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+        if (detection) break;
+        await new Promise((r) => setTimeout(r, 250));
+      }
 
       if (!detection) {
         speak("No face detected. Press Enter to try again.");
@@ -140,7 +170,6 @@ const Login = ({ setIsLoggedIn }) => {
       }
 
       const descriptor = Array.from(detection.descriptor);
-
       const res = await axios.post("http://localhost:5000/api/auth/face-login", {
         username,
         faceDescriptor: descriptor,
@@ -148,13 +177,14 @@ const Login = ({ setIsLoggedIn }) => {
 
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
-        localStorage.setItem("role", "student");
+        localStorage.setItem("role", res.data.role || "student");
+        localStorage.setItem("username", res.data.username);
 
         setIsLoggedIn(true);
         navigate("/courses");
       }
     } catch {
-      speak("Face not recognized. Try again.");
+      speak("Face not recognized. Press Enter to try again.");
       setStep("ready");
     }
 

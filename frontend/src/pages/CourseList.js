@@ -37,18 +37,19 @@ const CourseList = () => {
 
         if (approvedCourses.length > 0) {
 
-          const userName = localStorage.getItem("name") || "Student";
+          const userName = localStorage.getItem("username") || "Student";
 
           const courseNames = approvedCourses
             .map((c, i) => `${i + 1}. ${c.title}`)
             .join(", ");
 
           speak(
-            `Welcome ${userName}. 
-            You have ${approvedCourses.length} courses available. 
-            The courses are ${courseNames}. 
-            Currently selected course is ${approvedCourses[0].title}. 
-            Press spacebar and say next or details or open.`
+            `Welcome ${userName}. ` +
+            `You have ${approvedCourses.length} courses available. ` +
+            `The courses are ${courseNames}. ` +
+            `Currently selected course is ${approvedCourses[0].title}. ` +
+            `Press spacebar and say next, details, open, or quiz. ` +
+            `Say repeat at any time to hear this again.`  // ← add this line
           );
 
         } else {
@@ -130,10 +131,15 @@ const CourseList = () => {
           break;
 
         case "repeat":
+          const repeatNames = courses
+            .map((c, i) => `${i + 1}. ${c.title}`)
+            .join(", ");
 
           speak(
-            `Currently selected course is ${currentCourse.title}. 
-            Press space and say next, details, open, or quiz.`
+            `You have ${courses.length} courses available. ` +
+            `The courses are ${repeatNames}. ` +
+            `Currently selected course is ${courses[currentIndex].title}. ` +
+            `Press spacebar and say next, details, open, or quiz.`
           );
           break;
 
