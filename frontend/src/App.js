@@ -19,6 +19,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import VoiceFeedback from "./components/VoiceFeedback";
+import QuizPage from "./pages/QuizPage";
 
 import axios from "axios";
 import {
@@ -75,98 +76,98 @@ const VoiceHandler = ({ setIsLoggedIn }) => {
   // ✅ Register spacebar listener ONCE — never re-register
   useEffect(() => {
     const handleVoiceCommand = (command) => {
-  command = command.trim().toLowerCase();
+      command = command.trim().toLowerCase();
 
-  const currentPath = locationRef.current;
-  const currentRole = localStorage.getItem("role");
+      const currentPath = locationRef.current;
+      const currentRole = localStorage.getItem("role");
 
-  const isTeacherDashboard =
-    currentRole === "teacher" && currentPath.startsWith("/teacher-dashboard");
-  const isAdminDashboard =
-    currentRole === "admin" && currentPath.startsWith("/admin-dashboard");
+      const isTeacherDashboard =
+        currentRole === "teacher" && currentPath.startsWith("/teacher-dashboard");
+      const isAdminDashboard =
+        currentRole === "admin" && currentPath.startsWith("/admin-dashboard");
 
-  if (isTeacherDashboard || isAdminDashboard) return;
+      if (isTeacherDashboard || isAdminDashboard) return;
 
-  lastCommandRef.current = command;
+      lastCommandRef.current = command;
 
-  // ✅ GLOBAL COMMANDS — handle FIRST, before dispatching to children
-  let spoken = "";
+      // ✅ GLOBAL COMMANDS — handle FIRST, before dispatching to children
+      let spoken = "";
 
-  if (command.includes("help")) {
-    spoken =
-      "Available commands are: " +
-      "Say home to go to the home page. " +
-      "Say login to go to the login page. " +
-      "Say register to create an account. " +
-      "Say courses to view your courses. " +
-      "Say profile to view your profile. " +
-      "Say logout to log out. " +
-      "To use any command, hold spacebar and speak, then release.";
-    speak(spoken);
-    return; // ✅ don't dispatch to children
-  }
+      if (command.includes("help")) {
+        spoken =
+          "Available commands are: " +
+          "Say home to go to the home page. " +
+          "Say login to go to the login page. " +
+          "Say register to create an account. " +
+          "Say courses to view your courses. " +
+          "Say profile to view your profile. " +
+          "Say logout to log out. " +
+          "To use any command, hold spacebar and speak, then release.";
+        speak(spoken);
+        return; // ✅ don't dispatch to children
+      }
 
-  if (command.includes("logout")) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("username");
-    setIsLoggedInRef.current(false);
-    navigateRef.current("/");
-    speak("Logged out successfully.");
-    return;
-  }
+      if (command.includes("logout")) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        localStorage.removeItem("username");
+        setIsLoggedInRef.current(false);
+        navigateRef.current("/");
+        speak("Logged out successfully.");
+        return;
+      }
 
-  if (command.includes("home")) {
-    navigateRef.current("/");
-    speak("Navigating to home.");
-    return;
-  }
+      if (command.includes("home")) {
+        navigateRef.current("/");
+        speak("Navigating to home.");
+        return;
+      }
 
-  if (command.includes("login")) {
-    navigateRef.current("/login");
-    speak("Navigating to login.");
-    return;
-  }
+      if (command.includes("login")) {
+        navigateRef.current("/login");
+        speak("Navigating to login.");
+        return;
+      }
 
-  if (command.includes("register")) {
-    navigateRef.current("/register");
-    speak("Navigating to register.");
-    return;
-  }
+      if (command.includes("register")) {
+        navigateRef.current("/register");
+        speak("Navigating to register.");
+        return;
+      }
 
-  if (command.includes("courses")) {
-    navigateRef.current("/courses");
-    speak("Navigating to courses.");
-    return;
-  }
+      if (command.includes("courses")) {
+        navigateRef.current("/courses");
+        speak("Navigating to courses.");
+        return;
+      }
 
-  if (command.includes("profile")) {
-    navigateRef.current("/profile");
-    speak("Navigating to profile.");
-    return;
-  }
+      if (command.includes("profile")) {
+        navigateRef.current("/profile");
+        speak("Navigating to profile.");
+        return;
+      }
 
-  if (command.includes("repeat")) {
-    speak(
-      lastCommandRef.current
-        ? `Last command was: ${lastCommandRef.current}`
-        : "No previous command."
-    );
-    return;
-  }
+      if (command.includes("repeat")) {
+        speak(
+          lastCommandRef.current
+            ? `Last command was: ${lastCommandRef.current}`
+            : "No previous command."
+        );
+        return;
+      }
 
-  // ✅ Only dispatch to children for page-specific commands
-  const voiceEvent = new CustomEvent("voiceCommand", {
-    detail: command,
-    cancelable: true,
-  });
-  const notHandledByChild = window.dispatchEvent(voiceEvent);
+      // ✅ Only dispatch to children for page-specific commands
+      const voiceEvent = new CustomEvent("voiceCommand", {
+        detail: command,
+        cancelable: true,
+      });
+      const notHandledByChild = window.dispatchEvent(voiceEvent);
 
-  if (notHandledByChild) {
-    // Child didn't handle it either
-    speak(`Command not recognized: ${command}`);
-  }
-};
+      if (notHandledByChild) {
+        // Child didn't handle it either
+        speak(`Command not recognized: ${command}`);
+      }
+    };
 
     // ✅ Register ONCE — empty dependency array
     setupSpacebarListening(handleVoiceCommand);
@@ -350,6 +351,15 @@ const App = () => {
               <RoleRoute allowedRole="teacher">
                 <TeacherDashboard />
               </RoleRoute>
+            }
+          />
+
+          <Route
+            path="/quiz/:id"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <QuizPage />
+              </ProtectedRoute>
             }
           />
 

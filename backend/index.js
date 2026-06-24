@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const courseRoutes = require('./routes/courses');
 const adminRoutes = require('./routes/admin');
 const aiRoutes = require('./routes/aiRoutes.js');
+const quizRoutes = require('./routes/quizzes');
 
 dotenv.config();
 connectDB();
@@ -32,6 +33,7 @@ app.post('/debug', (req, res) => {
 // ✅ Actual routes
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/quizzes', quizRoutes); 
 app.use('/api/admin', adminRoutes);
 
 app.use("/api/ai", aiRoutes);
