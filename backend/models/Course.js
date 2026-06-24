@@ -13,17 +13,6 @@ const courseSchema = new mongoose.Schema({
     }
   ],
 
-  quizzes: [
-    {
-      question: { type: String, required: true },
-      options: {
-        type: [String],
-        validate: v => v.length === 4
-      },
-      answer: { type: String, required: true }
-    }
-  ],
-
   teacher: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

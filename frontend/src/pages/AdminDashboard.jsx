@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import AdminSidebar from "../components/AdminSidebar";
 import ApproveTeachers from "./ApproveTeachers";
 import ApproveCourses from "./ApproveCourses";
+import ApproveQuizzes from "../components/ApproveQuizzes";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -24,6 +25,8 @@ const AdminDashboard = () => {
         return <ApproveTeachers />;
       case "courses":
         return <ApproveCourses />;
+      case "quizzes":
+        return <ApproveQuizzes />;
       default:
         return <h3>Welcome Admin</h3>;
     }
