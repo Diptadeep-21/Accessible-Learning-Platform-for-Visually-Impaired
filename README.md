@@ -1,87 +1,226 @@
-# ♿ Accessible Learning Platform for Visually Impaired
+# Accessible Learning Platform for Visually Impaired
 
-An AI-powered, accessibility-focused learning platform designed specifically for **visually impaired users**, enabling seamless interaction through **voice navigation, audio learning, and intelligent assistance**.
+An AI-powered accessibility-first learning platform that enables visually impaired users to independently access educational content through voice navigation, speech feedback, facial authentication, and intelligent learning assistance.
 
----
-
-## 🌟 Overview
-
-This project aims to bridge the digital learning gap by providing an **inclusive education system** where visually impaired users can independently access study materials, attempt quizzes, and interact with content using **voice commands and audio feedback**.
+The platform combines assistive technologies with modern web development to provide an inclusive and hands-free learning experience while offering dedicated portals for students, teachers, and administrators.
 
 ---
 
-## 🖼️ Screenshots
+## Overview
 
-### 🔹 Landing Page
-![Landing Page](screenshots/landing-pg.png)
+The Accessible Learning Platform is designed to reduce the barriers visually impaired learners face while accessing online education. Instead of relying on traditional visual interfaces, users interact with the application using voice commands, speech synthesis, and AI-assisted learning tools.
 
-### 🔹 Teacher Upload Dashboard
-![Teacher Upload](screenshots/teacher-uploads.png)
-
-### 🔹 Admin Dashboard
-![Admin Dashboard](screenshots/admin-dashboard.png)
+The platform enables students to navigate courses, consume learning material, attempt quizzes, and receive AI-generated explanations entirely through accessible interactions. Teachers can upload and manage educational content, while administrators ensure platform quality through approval workflows.
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
-### 🗣️ Voice-Based Navigation
-- Fully **hands-free navigation** using **Web Speech API**
-- Users can **login, navigate, and interact** via voice commands
-- Enhances usability without relying on visual interfaces
+### Accessibility First
 
-### 🔐 Smart Authentication
-- **Face recognition login** for secure and quick access
-- Voice-assisted username input for accessibility
+- Hands-free voice navigation using the Web Speech API
+- Speech synthesis for continuous audio guidance
+- Voice-controlled page navigation
+- Screen-reader friendly interface
+- Keyboard-accessible interactions
 
-### 🎧 Audio Learning System
-- Users can **listen to study materials uploaded by teachers**
-- Designed for **screen-free learning experience**
+### AI Learning Assistant
 
-### 📝 Audio-Based Quizzes
-- Attempt quizzes through **audio prompts**
-- Voice-based responses for answering questions
+- AI-powered content summarization
+- Simplified explanations for difficult topics
+- Real-world examples for better understanding
+- Context-aware assistance within each learning module
 
-### 🤖 AI Assistant
-- Integrated **AI-powered assistant**
-- Provides **content summarization** for better understanding
-- Helps users quickly grasp key concepts
+### Intelligent Authentication
 
-### 👨‍🏫 Teacher Module
-- Teachers can:
-  - Login via email/password
-  - Upload study materials (audio/text)
-  - Manage learning modules
+- Face recognition login for students
+- Secure email/password authentication for teachers and administrators
+- JWT-based authentication and authorization
+- Role-based access control
 
-### 🛡️ Admin Panel
-- Admin approval system for:
-  - Teacher registrations
-  - Content moderation
-- Ensures **quality and security of learning resources**
+### Interactive Learning Experience
+
+- Audio-first course consumption
+- Voice-guided module navigation
+- Interactive quizzes
+- Progress tracking
+- Profile management
+
+### Teacher Portal
+
+Teachers can:
+
+- Upload learning materials
+- Create and manage quizzes
+- Monitor uploaded content
+- Manage their courses
+
+### Administrator Portal
+
+Administrators can:
+
+- Approve teacher registrations
+- Approve uploaded courses
+- Approve quizzes
+- Manage platform users
+- Moderate platform content
 
 ---
 
-## 🛠️ Tech Stack
+## Technology Stack
 
-**Frontend**
+### Frontend
+
 - React.js
+- React Router
+- Axios
 - Tailwind CSS
+- Web Speech API
+- Face API.js
 
-**Backend**
+### Backend
+
 - Node.js
 - Express.js
+- JWT Authentication
+- REST APIs
 
-**Database**
-- MongoDB
+### Database
 
-**APIs & Tools**
-- Web Speech API (Voice Recognition & Synthesis)  
-- Face Recognition APIs  
-- AI/NLP APIs (for summarization)  
+- MongoDB Atlas
+- Mongoose
+
+### AI & Accessibility
+
+- OpenAI API
+- Web Speech API
+- Speech Synthesis API
+- Face Recognition
 
 ---
 
-## 📂 Project Structure
+## Application Screenshots
+
+### Landing Page
+
+The entry point of the application introducing the accessibility-first learning platform.
+
+![Landing Page](screenshots/landing-pg1.png)
+
+---
+
+### Home Page
+
+Voice-enabled home page that allows users to navigate the platform using speech commands.
+
+![Home Page](screenshots/home-pg.png)
+
+---
+
+### Sign In
+
+Secure authentication page supporting voice-assisted interaction.
+
+![Sign In](screenshots/signin-pg.png)
+
+---
+
+### Registration
+
+Student and teacher registration with accessible input mechanisms.
+
+![Register](screenshots/register-pg.png)
+
+---
+
+### Course Dashboard
+
+Browse and access available learning materials.
+
+![Courses](screenshots/course-pg.png)
+
+---
+
+### Interactive Quiz
+
+Voice-guided quiz interface for visually impaired learners.
+
+![Quiz](screenshots/quiz-pg.png)
+
+---
+
+### Quiz Result
+
+Instant score evaluation after quiz completion.
+
+![Quiz Score](screenshots/quiz-score.png)
+
+---
+
+## Teacher Dashboard
+
+### Upload Course
+
+Teachers can upload and manage learning content.
+
+![Upload Course](screenshots/teacher-upload-course.png)
+
+---
+
+### Upload Quiz
+
+Create quizzes for students.
+
+![Upload Quiz](screenshots/teacher-upload-quiz.png)
+
+---
+
+### My Courses
+
+Manage previously uploaded courses.
+
+![Teacher Courses](screenshots/teacher-mycourses.png)
+
+---
+
+### My Quizzes
+
+View and manage created quizzes.
+
+![Teacher Quizzes](screenshots/teacher-myquizzes.png)
+
+---
+
+## Administrator Portal
+
+### Admin Login
+
+Secure administrator authentication.
+
+![Admin Login](screenshots/admin-login-pg.png)
+
+
+## System Architecture
+
+```
+                React Frontend
+                       │
+                       │ REST APIs
+                       ▼
+              Express.js Backend
+                       │
+        ┌──────────────┴──────────────┐
+        │                             │
+        ▼                             ▼
+ MongoDB Atlas                 OpenAI API
+        │
+        ▼
+ Face Recognition Authentication
+```
+
+---
+
+## Project Structure
 
 ```
 Accessible-Learning-Platform/
@@ -91,80 +230,127 @@ Accessible-Learning-Platform/
 │   │   └── db.js
 │   ├── models/
 │   │   ├── Course.js
+│   │   ├── Quiz.js
 │   │   └── User.js
 │   ├── routes/
 │   │   ├── admin.js
 │   │   ├── aiRoutes.js
 │   │   ├── auth.js
-│   │   └── courses.js
-│   └── services/
-│       └── aiService.js
+│   │   ├── courses.js
+│   │   └── quizzes.js
+│   ├── services/
+│   │   └── aiService.js
+│   ├── index.js
+│   └── package.json
 │
 ├── frontend/
 │   ├── public/
+│   ├── screenshots/
+│   │   ├── admin-login-pg.png
+│   │   ├── course-pg.png
+│   │   ├── home-pg.png
+│   │   ├── landing-pg1.png
+│   │   ├── quiz-pg.png
+│   │   ├── quiz-score.png
+│   │   ├── register-pg.png
+│   │   ├── signin-pg.png
+│   │   ├── teacher-mycourses.png
+│   │   ├── teacher-myquizzes.png
+│   │   ├── teacher-upload-course.png
+│   │   └── teacher-upload-quiz.png
+│   │
 │   ├── src/
-│   │   ├── assets/
-│   │   │   └── hero1.png
 │   │   ├── components/
 │   │   │   ├── AdminSidebar.jsx
 │   │   │   ├── AIAssistant.jsx
+│   │   │   ├── ApproveQuizzes.jsx
+│   │   │   ├── TeacherCourses.jsx
+│   │   │   ├── TeacherQuizzes.jsx
+│   │   │   ├── UploadCourse.jsx
+│   │   │   ├── UploadQuiz.jsx
+│   │   │   ├── VoiceActivationGate.jsx
 │   │   │   └── VoiceFeedback.jsx
+│   │   │
 │   │   ├── pages/
-│   │   │   ├── Home.js
-│   │   │   ├── Login.js
-│   │   │   ├── Register.jsx
-│   │   │   ├── CourseList.js
-│   │   │   ├── CourseDetail.js
-│   │   │   ├── Profile.js
 │   │   │   ├── AdminDashboard.jsx
-│   │   │   ├── TeacherDashboard.jsx
+│   │   │   ├── AdminLogin.jsx
 │   │   │   ├── ApproveCourses.jsx
 │   │   │   ├── ApproveTeachers.jsx
-│   │   │   └── ManageUsers.jsx
+│   │   │   ├── CourseDetail.js
+│   │   │   ├── CourseList.js
+│   │   │   ├── Home.js
+│   │   │   ├── Login.js
+│   │   │   ├── ManageUsers.jsx
+│   │   │   ├── Profile.js
+│   │   │   ├── QuizPage.jsx
+│   │   │   ├── Register.jsx
+│   │   │   └── TeacherDashboard.jsx
+│   │   │
 │   │   ├── utils/
 │   │   │   ├── commandUtils.js
 │   │   │   └── voiceUtils.js
+│   │   │
 │   │   ├── App.js
-│   │   └── index.js
-│
-├── screenshots/
-│   ├── landing-pg.png
-│   ├── teacher-uploads.png
-│   └── admin-dashboard.png
+│   │   ├── index.js
+│   │   └── App.css
+│   │
+│   └── package.json
 │
 └── README.md
 ```
 
 ---
 
-## 🧠 Key Highlights
+## Application Workflow
 
-- Accessibility-first design
-- Voice-driven user experience
-- AI + Assistive Technology integration
-- Full-stack MERN implementation
-- Solves a real-world inclusion problem
+1. Users authenticate using face recognition or email/password.
+2. Voice navigation allows users to control the platform hands-free.
+3. Students access learning modules with speech-assisted guidance.
+4. AI Assistant provides summaries, simplified explanations, and examples on demand.
+5. Students attempt quizzes and receive instant evaluation.
+6. Teachers manage educational resources.
+7. Administrators review and approve platform content.
 
 ---
 
-## ▶️ Getting Started
+## Deployment
 
-### 1. Clone Repository
+### Frontend
+
+- React.js
+- Hosted on Vercel
+
+### Backend
+
+- Node.js & Express.js
+- Hosted on Render
+
+### Database
+
+- MongoDB Atlas
+
+---
+
+## Installation
+
+### Clone the repository
+
 ```bash
-git clone https://github.com/your-username/accessible-learning-platform.git
-cd accessible-learning-platform
+git clone https://github.com/Diptadeep-21/Accessible-Learning-Platform-for-Visually-Impaired.git
+
+cd Accessible-Learning-Platform-for-Visually-Impaired
 ```
 
-### 2. Install Dependencies
+### Backend
 
-#### Backend
 ```bash
 cd backend
 npm install
 npm start
 ```
 
-#### Frontend
+### Frontend
+
 ```bash
 cd frontend
 npm install
@@ -173,22 +359,26 @@ npm start
 
 ---
 
-## 🚀 Future Improvements
+## Future Enhancements
 
-- Real-time voice feedback UI
-- Advanced AI tutoring system
-- Mobile accessibility optimization
+- OCR-based document reading
 - Multi-language voice support
+- AI-powered personalized tutoring
+- Learning analytics dashboard
+- Offline accessibility mode
+- Real-time collaborative classrooms
 
 ---
 
-## 👨‍💻 Author
+## Author
 
-**Diptadeep Sinha**  
-B.Tech CSE, KIIT University  
+**Diptadeep Sinha**
+
+B.Tech Computer Science and Engineering  
+Kalinga Institute of Industrial Technology (KIIT)
 
 ---
 
-## ⭐
+## License
 
-If you find this project useful, consider giving it a ⭐ on GitHub!
+This project is intended for educational and social cause.
