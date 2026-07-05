@@ -1,120 +1,249 @@
-// Add useCallback to your imports
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import * as faceapi from "face-api.js";
 import axios from "axios";
 import { speak } from "../utils/voiceUtils";
 import { useNavigate } from "react-router-dom";
 
-const Register = () => {
-  const videoRef = useRef();
-  const navigate = useNavigate();
+/* ─────────────────────────────────────────
+   Design tokens — Soft White (matches all pages)
+───────────────────────────────────────── */
+const T = {
+  bg:        "#f8f9fc",
+  surface:   "#ffffff",
+  surfaceHi: "#f0f2fa",
+  border:    "#e2e5ef",
+  borderHi:  "#5b52e8",
+  accent:    "#5b52e8",
+  accentDim: "#c8c5f8",
+  success:   "#16a34a",
+  warning:   "#d97706",
+  danger:    "#dc2626",
+  textPri:   "#111827",
+  textSec:   "#6b7280",
+  textMuted: "#9ca3af",
+  radius:    "12px",
+  font:      "'Inter', 'Segoe UI', sans-serif",
+};
 
-  const [role, setRole] = useState("student");
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: T.bg,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    fontFamily: T.font,
+    padding: "24px",
+    color: T.textPri,
+  },
+  card: {
+    width: "100%",
+    maxWidth: "480px",
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: "20px",
+    padding: "40px 36px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "24px",
+    boxShadow: "0 4px 24px rgba(91,82,232,0.06)",
+  },
+  header: { textAlign: "center" },
+  logo: {
+    fontSize: "13px", letterSpacing: "0.15em",
+    textTransform: "uppercase", color: T.accent,
+    fontWeight: 600, marginBottom: "12px",
+  },
+  title: { fontSize: "26px", fontWeight: 700, color: T.textPri, margin: 0 },
+  subtitle: { fontSize: "14px", color: T.textSec, marginTop: "6px" },
+
+  roleRow: {
+    display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px",
+    background: T.surfaceHi, borderRadius: T.radius,
+    padding: "5px", border: `1px solid ${T.border}`,
+  },
+  roleBtn: (active) => ({
+    padding: "10px", borderRadius: "9px", border: "none",
+    fontFamily: T.font, fontSize: "14px", fontWeight: 600,
+    cursor: "pointer", transition: "all 0.2s",
+    background: active ? T.accent : "transparent",
+    color: active ? "#ffffff" : T.textSec, outline: "none",
+  }),
+
+  stepBadge: {
+    display: "flex", alignItems: "center", gap: "10px",
+    background: T.surfaceHi, border: `1px solid ${T.border}`,
+    borderRadius: T.radius, padding: "12px 16px",
+    fontSize: "14px", color: T.textSec, minHeight: "46px",
+  },
+  dot: (color) => ({
+    width: "9px", height: "9px", borderRadius: "50%",
+    background: color, flexShrink: 0, boxShadow: `0 0 6px ${color}`,
+  }),
+  stepText: { fontWeight: 500, color: T.textPri, fontSize: "14px" },
+
+  confirmBox: {
+    background: T.surfaceHi, border: `1px solid ${T.accentDim}`,
+    borderRadius: T.radius, padding: "16px", textAlign: "center",
+  },
+  confirmName: {
+    fontSize: "22px", fontWeight: 700, color: T.accent, letterSpacing: "0.04em",
+  },
+  confirmHint: { fontSize: "13px", color: T.textSec, marginTop: "6px" },
+  keyHint: {
+    display: "inline-block", background: T.border, color: T.textPri,
+    borderRadius: "5px", padding: "1px 7px",
+    fontFamily: "monospace", fontSize: "13px", fontWeight: 700,
+  },
+
+  videoWrap: {
+    position: "relative", borderRadius: T.radius,
+    overflow: "hidden", border: `2px solid ${T.border}`,
+    background: "#000", lineHeight: 0,
+  },
+  video: { width: "100%", display: "block", borderRadius: T.radius },
+  scanOverlay: {
+    position: "absolute", inset: 0, display: "flex",
+    alignItems: "center", justifyContent: "center",
+    background: "rgba(91,82,232,0.07)", pointerEvents: "none",
+  },
+  scanText: {
+    background: "rgba(255,255,255,0.9)", color: T.accent,
+    fontSize: "13px", fontWeight: 700, padding: "6px 14px",
+    borderRadius: "20px", letterSpacing: "0.06em",
+    border: `1px solid ${T.accentDim}`,
+  },
+
+  loadingBar: {
+    height: "3px", background: T.border, borderRadius: "2px",
+    overflow: "hidden", position: "relative",
+  },
+  loadingFill: {
+    height: "100%", width: "40%", background: T.accent,
+    borderRadius: "2px", animation: "slide 1.2s ease-in-out infinite",
+  },
+
+  formGroup: { display: "flex", flexDirection: "column", gap: "4px" },
+  label: {
+    fontSize: "12px", fontWeight: 600, color: T.textSec,
+    textTransform: "uppercase", letterSpacing: "0.08em",
+  },
+  input: {
+    padding: "12px 14px", background: T.surface,
+    border: `1px solid ${T.border}`, borderRadius: T.radius,
+    color: T.textPri, fontSize: "15px", fontFamily: T.font,
+    outline: "none", transition: "border-color 0.2s",
+    width: "100%", boxSizing: "border-box",
+  },
+
+  btn: (loading) => ({
+    padding: "13px",
+    background: loading ? T.accentDim : T.accent,
+    color: "#ffffff", border: "none", borderRadius: T.radius,
+    fontSize: "15px", fontWeight: 700, fontFamily: T.font,
+    cursor: loading ? "not-allowed" : "pointer",
+    letterSpacing: "0.02em", transition: "background 0.2s", width: "100%",
+  }),
+
+  voiceHint: {
+    display: "flex", alignItems: "center", justifyContent: "center",
+    gap: "8px", fontSize: "12px", color: T.textSec,
+    paddingTop: "4px", borderTop: `1px solid ${T.border}`,
+  },
+  micIcon: { width: "14px", height: "14px", fill: T.accent },
+};
+
+const STEP_META = {
+  welcome:     { color: T.textMuted, label: "Hold spacebar and say your username" },
+  confirm:     { color: T.warning,   label: "Confirm your username below" },
+  camera:      { color: T.warning,   label: 'Say "start camera" to continue' },
+  ready:       { color: T.success,   label: "Camera ready — press Enter to register" },
+  registering: { color: T.accent,    label: "Registering your face…" },
+};
+
+const Register = () => {
+  const videoRef   = useRef();
+  const navigate   = useNavigate();
+  const isErrorRef = useRef(false);
+
+  const [role,     setRole]     = useState("student");
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
+  const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
-  const [uiStep, setUiStep] = useState("welcome");
-  const [loading, setLoading] = useState(false);
+  const [uiStep,   setUiStep]   = useState("welcome");
+  const [loading,  setLoading]  = useState(false);
 
   const state = useRef({ step: "welcome", username: "" });
 
-  const setStep = (step) => {
-    state.current.step = step;
-    setUiStep(step);
-  };
+  const setStep = (step) => { state.current.step = step; setUiStep(step); };
+  const handleFocus = (e) => { e.target.style.borderColor = T.accent; };
+  const handleBlur  = (e) => { e.target.style.borderColor = T.border; };
 
-  // Add this ref near your other refs at the top of the component
-const isErrorRef = useRef(false);
-
-  // ✅ STEP 1 — define startCamera FIRST
   const startCamera = useCallback(async () => {
     speak("Starting the camera. Please wait.");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       if (videoRef.current) videoRef.current.srcObject = stream;
       setTimeout(() => setStep("ready"), 500);
-    } catch (err) {
+    } catch {
       speak("Camera access denied. Please allow permission.");
       setStep("welcome");
     }
   }, []);
 
-  // ✅ STEP 2 — define handleStudentRegister SECOND
   const handleStudentRegister = useCallback(async () => {
-  // Guard — prevent multiple simultaneous calls
-  if (loading) return;
-  
-  setLoading(true);
+    if (loading) return;
+    setLoading(true);
 
-  if (!window.faceModelsLoaded) {
-    speak("Models are still loading. Please wait.");
-    setLoading(false);
-    setStep("ready"); // ← step back so Enter works again
-    return;
-  }
-
-  let detection = null;
-  for (let i = 0; i < 8; i++) {
-    detection = await faceapi
-      .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-      .withFaceLandmarks()
-      .withFaceDescriptor();
-    if (detection) break;
-    await new Promise((r) => setTimeout(r, 250));
-  }
-
-  if (!detection) {
-    speak("Face not detected. Press Enter to try again.");
-    setLoading(false);
-    setStep("ready");
-    return;
-  }
-
-  const descriptor = Array.from(detection.descriptor);
-
-  try {
-    await axios.post("http://localhost:5000/api/auth/student-register", {
-      username: state.current.username,
-      faceDescriptor: descriptor,
-    });
-
-    speak("Registration successful. Redirecting to login page.");
-    setTimeout(() => navigate("/login"), 1500);
-
-  } catch (err) {
-    const status = err.response?.status;
-    const serverMessage = err.response?.data?.error || "";
-
-    console.error("Registration error:", status, serverMessage);
-
-    // ✅ Speak specific messages based on what went wrong
-    if (status === 400 && serverMessage.toLowerCase().includes("face")) {
-      speak(
-        "This face is already registered to another account. " +
-        "Please log in with your existing account instead."
-      );
-    } else if (status === 400 && serverMessage.toLowerCase().includes("username")) {
-      speak(
-        "This username is already taken. " +
-        "Press 2 to go back and choose a different username."
-      );
-    } else if (status === 400) {
-      speak(serverMessage || "Invalid registration data. Please try again.");
-    } else if (status === 500) {
-      speak("Server error. Please try again in a moment.");
-    } else {
-      speak("Registration failed. Please try again.");
+    if (!window.faceModelsLoaded) {
+      speak("Models are still loading. Please wait.");
+      setLoading(false); setStep("ready"); return;
     }
 
-    isErrorRef.current = true; // ← suppress the step-change speak
-  setStep("ready");
+    let detection = null;
+    for (let i = 0; i < 8; i++) {
+      detection = await faceapi
+        .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks().withFaceDescriptor();
+      if (detection) break;
+      await new Promise((r) => setTimeout(r, 250));
+    }
 
-  } finally {
-    setLoading(false);
-  }
-}, [navigate, loading]);
+    if (!detection) {
+      speak("Face not detected. Press Enter to try again.");
+      setLoading(false); setStep("ready"); return;
+    }
 
-  // ✅ STEP 3 — NOW the effects that use them
+    const descriptor = Array.from(detection.descriptor);
+
+    try {
+      await axios.post("http://localhost:5000/api/auth/student-register", {
+        username: state.current.username, faceDescriptor: descriptor,
+      });
+      speak("Registration successful. Redirecting to login page.");
+      setTimeout(() => navigate("/login"), 1500);
+    } catch (err) {
+      const status        = err.response?.status;
+      const serverMessage = err.response?.data?.error || "";
+      if (status === 400 && serverMessage.toLowerCase().includes("face")) {
+        speak("This face is already registered to another account. Please log in with your existing account instead.");
+      } else if (status === 400 && serverMessage.toLowerCase().includes("username")) {
+        speak("This username is already taken. Press 2 to go back and choose a different username.");
+      } else if (status === 400) {
+        speak(serverMessage || "Invalid registration data. Please try again.");
+      } else if (status === 500) {
+        speak("Server error. Please try again in a moment.");
+      } else {
+        speak("Registration failed. Please try again.");
+      }
+      isErrorRef.current = true;
+      setStep("ready");
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate, loading]);
+
   useEffect(() => {
     if (role !== "student") return;
     const loadModels = async () => {
@@ -126,45 +255,34 @@ const isErrorRef = useRef(false);
           faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
         ]);
         window.faceModelsLoaded = true;
-      } catch (err) {
-        speak("Face recognition models could not be loaded.");
-      }
+      } catch { speak("Face recognition models could not be loaded."); }
     };
     loadModels();
   }, [role]);
 
   useEffect(() => {
-  if (role !== "student") return;
-  const step = state.current.step;
-
-  // ✅ If we just had an error, don't override the error message
-  if (step === "ready" && isErrorRef.current) {
-    isErrorRef.current = false; // reset for next time
-    return; // skip speaking "Camera ready"
-  }
-
-  switch (step) {
-    case "welcome":    speak("Welcome to face registration. Hold space and say your username."); break;
-    case "confirm":    speak(`I heard ${state.current.username}. Press 1 to confirm or 2 to retry.`); break;
-    case "camera":     speak("Username confirmed. Say start camera to continue."); break;
-    case "ready":      speak("Camera ready. Press Enter to register your face."); break;
-    case "registering": speak("Registering your face. Please hold still."); break;
-    default: break;
-  }
-}, [uiStep, role]);
+    if (role !== "student") return;
+    const step = state.current.step;
+    if (step === "ready" && isErrorRef.current) { isErrorRef.current = false; return; }
+    switch (step) {
+      case "welcome":     speak("Welcome to face registration. Hold space and say your username."); break;
+      case "confirm":     speak(`I heard ${state.current.username}. Press 1 to confirm or 2 to retry.`); break;
+      case "camera":      speak("Username confirmed. Say start camera to continue."); break;
+      case "ready":       speak("Camera ready. Press Enter to register your face."); break;
+      case "registering": speak("Registering your face. Please hold still."); break;
+      default: break;
+    }
+  }, [uiStep, role]);
 
   useEffect(() => {
     if (role !== "student") return;
     const listener = (e) => {
-      const cmd = (e.detail || "").trim().toLowerCase();
+      const cmd  = (e.detail || "").trim().toLowerCase();
       const step = state.current.step;
       if (step === "welcome") {
         e.preventDefault();
         if (!cmd) { speak("Please say your username."); return; }
-        state.current.username = cmd;
-        setUsername(cmd);
-        setStep("confirm");
-        return;
+        state.current.username = cmd; setUsername(cmd); setStep("confirm"); return;
       }
       if (step === "camera") {
         e.preventDefault();
@@ -174,7 +292,7 @@ const isErrorRef = useRef(false);
     };
     window.addEventListener("voiceCommand", listener);
     return () => window.removeEventListener("voiceCommand", listener);
-  }, [role, startCamera]);  // ✅ startCamera in deps
+  }, [role, startCamera]);
 
   useEffect(() => {
     if (role !== "student") return;
@@ -184,112 +302,141 @@ const isErrorRef = useRef(false);
         if (e.key === "1") setStep("camera");
         if (e.key === "2") { state.current.username = ""; setUsername(""); setStep("welcome"); }
       }
-      if (step === "ready" && e.key === "Enter") {
-        setStep("registering");
-        handleStudentRegister();
-      }
+      if (step === "ready" && e.key === "Enter") { setStep("registering"); handleStudentRegister(); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [role, handleStudentRegister]);  // ✅ handleStudentRegister in deps
+  }, [role, handleStudentRegister]);
 
-
-  /***********************************
-   * TEACHER REGISTRATION
-   ***********************************/
   const handleTeacherRegister = async () => {
-    if (!username || !email || !password) {
-      alert("All fields are required");
-      return;
-    }
-
+    if (!username || !email || !password) { alert("All fields are required"); return; }
     try {
       setLoading(true);
-
-      await axios.post("http://localhost:5000/api/auth/teacher-register", {
-        username,
-        email,
-        password,
-      });
-
+      await axios.post("http://localhost:5000/api/auth/teacher-register", { username, email, password });
       alert("Teacher registered. Await admin approval.");
-      navigate("/teacher-login");
-
+      navigate("/login");
     } catch (err) {
       alert(err.response?.data?.error || "Registration failed");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  /***********************************
-   * UI
-   ***********************************/
+  const stepMeta = STEP_META[uiStep] || STEP_META.welcome;
+
   return (
-    <div style={{ textAlign: "center", padding: 20 }}>
-      <h2>Register</h2>
+    <>
+      <style>{`
+        @keyframes slide {
+          0%   { transform: translateX(-100%); }
+          50%  { transform: translateX(250%); }
+          100% { transform: translateX(250%); }
+        }
+      `}</style>
 
-      {/* ROLE SELECTOR */}
-      <div style={{ marginBottom: 20 }}>
-        <button onClick={() => setRole("student")}>Student</button>
-        <button onClick={() => setRole("teacher")}>Teacher</button>
-      </div>
+      <div style={styles.page}>
+        <main style={styles.card} role="main" aria-label="Registration page">
 
-      {role === "student" && (
-        <>
-          <h3>Face Registration</h3>
+          <header style={styles.header}>
+            <p style={styles.logo} aria-hidden="true">Accessible Learning</p>
+            <h1 style={styles.title}>Create account</h1>
+            <p style={styles.subtitle}>
+              {role === "student"
+                ? "Voice + face recognition for students"
+                : "Email and password for teachers"}
+            </p>
+          </header>
 
-          {uiStep === "confirm" && (
-            <div style={{ background: "#fff3cd", padding: 20, borderRadius: 12 }}>
-              <h4>You said: {username}</h4>
-              <p>Press 1 to confirm or 2 to retry.</p>
-            </div>
+          <div style={styles.roleRow} role="group" aria-label="Select your role">
+            <button style={styles.roleBtn(role === "student")}
+              onClick={() => { setRole("student"); setStep("welcome"); }}
+              aria-pressed={role === "student"}>Student</button>
+            <button style={styles.roleBtn(role === "teacher")}
+              onClick={() => setRole("teacher")}
+              aria-pressed={role === "teacher"}>Teacher</button>
+          </div>
+
+          {role === "student" && (
+            <>
+              <div style={styles.stepBadge} role="status" aria-live="polite"
+                aria-label={`Current step: ${stepMeta.label}`}>
+                <span style={styles.dot(stepMeta.color)} aria-hidden="true" />
+                <span style={styles.stepText}>{stepMeta.label}</span>
+              </div>
+
+              {uiStep === "confirm" && (
+                <div style={styles.confirmBox} role="alert" aria-live="assertive">
+                  <p style={{ color: T.textSec, fontSize: "13px", margin: "0 0 6px" }}>Username heard</p>
+                  <p style={styles.confirmName}>{state.current.username}</p>
+                  <p style={styles.confirmHint}>
+                    Press <span style={styles.keyHint}>1</span> to confirm &nbsp;·&nbsp;
+                    <span style={styles.keyHint}>2</span> to retry
+                  </p>
+                </div>
+              )}
+
+              <div style={{
+                ...styles.videoWrap,
+                display: (uiStep === "welcome" || uiStep === "confirm") ? "none" : "block",
+              }}>
+                <video ref={videoRef} autoPlay muted playsInline
+                  style={styles.video} aria-label="Camera feed for face registration" />
+                {uiStep === "registering" && (
+                  <div style={styles.scanOverlay} aria-hidden="true">
+                    <span style={styles.scanText}>REGISTERING…</span>
+                  </div>
+                )}
+              </div>
+
+              {loading && (
+                <div style={styles.loadingBar} aria-hidden="true">
+                  <div style={styles.loadingFill} />
+                </div>
+              )}
+
+              <div style={styles.voiceHint} aria-hidden="true">
+                <svg style={styles.micIcon} viewBox="0 0 24 24">
+                  <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm6.364 9.243a.75.75 0 0 1 .736.912A7.003 7.003 0 0 1 12.75 17.92V20h1.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5h1.5v-2.08A7.003 7.003 0 0 1 4.9 11.155a.75.75 0 0 1 1.472-.311A5.5 5.5 0 0 0 17.5 11c0-.072-.002-.144-.006-.215a.75.75 0 0 1 .87-.542z"/>
+                </svg>
+                Hold spacebar to speak a command
+              </div>
+            </>
           )}
 
-          <video
-            ref={videoRef}
-            width="500"
-            height="380"
-            autoPlay
-            muted
-            style={{ borderRadius: 10, marginTop: 20 }}
-          />
+          {role === "teacher" && (
+            <>
+              <div style={styles.formGroup}>
+                <label htmlFor="t-username" style={styles.label}>Username</label>
+                <input id="t-username" placeholder="your_username" value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  onFocus={handleFocus} onBlur={handleBlur}
+                  style={styles.input} aria-required="true" />
+              </div>
 
-          {loading && <p>Registering your face...</p>}
-        </>
-      )}
+              <div style={styles.formGroup}>
+                <label htmlFor="t-email" style={styles.label}>Email</label>
+                <input id="t-email" type="email" placeholder="teacher@school.com"
+                  value={email} onChange={(e) => setEmail(e.target.value)}
+                  onFocus={handleFocus} onBlur={handleBlur}
+                  style={styles.input} autoComplete="email" aria-required="true" />
+              </div>
 
-      {role === "teacher" && (
-        <div style={{ maxWidth: 300, margin: "0 auto" }}>
-          <input
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            style={{ display: "block", width: "100%", marginBottom: 10 }}
-          />
+              <div style={styles.formGroup}>
+                <label htmlFor="t-password" style={styles.label}>Password</label>
+                <input id="t-password" type="password" placeholder="••••••••"
+                  value={password} onChange={(e) => setPassword(e.target.value)}
+                  onFocus={handleFocus} onBlur={handleBlur}
+                  style={styles.input} autoComplete="new-password" aria-required="true" />
+              </div>
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ display: "block", width: "100%", marginBottom: 10 }}
-          />
+              <button style={styles.btn(loading)} onClick={handleTeacherRegister}
+                disabled={loading} aria-busy={loading}>
+                {loading ? "Registering…" : "Create Teacher Account"}
+              </button>
+            </>
+          )}
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ display: "block", width: "100%", marginBottom: 10 }}
-          />
-
-          <button onClick={handleTeacherRegister}>
-            {loading ? "Registering..." : "Register as Teacher"}
-          </button>
-        </div>
-      )}
-    </div>
+        </main>
+      </div>
+    </>
   );
 };
 

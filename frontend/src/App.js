@@ -19,6 +19,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import VoiceFeedback from "./components/VoiceFeedback";
+import VoiceActivationGate from "./components/VoiceActivationGate";
 import QuizPage from "./pages/QuizPage";
 
 import axios from "axios";
@@ -94,18 +95,17 @@ const VoiceHandler = ({ setIsLoggedIn }) => {
       let spoken = "";
 
       if (command.includes("help")) {
-        spoken =
-          "Available commands are: " +
-          "Say home to go to the home page. " +
-          "Say login to go to the login page. " +
-          "Say register to create an account. " +
-          "Say courses to view your courses. " +
-          "Say profile to view your profile. " +
-          "Say logout to log out. " +
-          "To use any command, hold spacebar and speak, then release.";
-        speak(spoken);
-        return; // ✅ don't dispatch to children
-      }
+  speak(
+    "Available commands are. " +
+    "Say start learning to begin learning. " +
+    "If you are logged in, it opens your courses. " +
+    "Otherwise, it takes you to the login page. " +
+    "Say login to go to the login page. " +
+    "Say register to create a new account. " +
+    "Hold the spacebar while speaking any command, then release it."
+  );
+  return;
+}
 
       if (command.includes("logout")) {
         localStorage.removeItem("token");
@@ -135,9 +135,42 @@ const VoiceHandler = ({ setIsLoggedIn }) => {
         return;
       }
 
+      if (
+        command === "start" ||
+        command.includes("start learning")
+      ) {
+        const token = localStorage.getItem("token");
+
+        if (token) {
+          speak("Opening your courses.");
+          setTimeout(() => {
+            navigateRef.current("/courses");
+          }, 300);
+        } else {
+          speak("Please log in first.");
+          setTimeout(() => {
+            navigateRef.current("/login");
+          }, 300);
+        }
+
+        return;
+      }
+
       if (command.includes("courses")) {
-        navigateRef.current("/courses");
-        speak("Navigating to courses.");
+        const token = localStorage.getItem("token");
+
+        if (token) {
+          speak("Navigating to courses.");
+          setTimeout(() => {
+            navigateRef.current("/courses");
+          }, 300);
+        } else {
+          speak("Please log in first.");
+          setTimeout(() => {
+            navigateRef.current("/login");
+          }, 300);
+        }
+
         return;
       }
 
@@ -193,7 +226,6 @@ const Layout = ({ setIsLoggedIn }) => (
 );
 
 /* ================= APP ================= */
-// ================= APP =================
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(
     !!localStorage.getItem("token")
@@ -201,89 +233,13 @@ const App = () => {
 
   const [speechReady, setSpeechReady] = useState(false);
 
-  // 🔥 ACTIVATION (ONLY AFTER USER INTERACTION)
-  useEffect(() => {
-    const handleStartKey = (e) => {
-      if (speechReady) return;
-
-      // ✅ Step 1 — Play a beep using Web Audio API
-      // This works immediately on user gesture with no prior setup
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        oscillator.type = "sine";
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);       // high beep
-        oscillator.frequency.setValueAtTime(660, audioCtx.currentTime + 0.1); // lower beep
-
-        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-
-        oscillator.start(audioCtx.currentTime);
-        oscillator.stop(audioCtx.currentTime + 0.3);
-      } catch (err) {
-        console.warn("Audio beep failed:", err);
-      }
-
-      // ✅ Step 2 — Speak full instructions AFTER the beep (small delay)
-      setTimeout(() => {
-        speak(
-          "Welcome to the Accessible Learning Platform. " +
-          "Voice control is now active. " +
-          "To give a command, hold the spacebar and speak. " +
-          "Release the spacebar when done. " +
-          "Say help at any time to hear available commands."
-        );
-      }, 350); // wait for beep to finish
-
-      setSpeechReady(true);
-      window.removeEventListener("keydown", handleStartKey);
-    };
-
-    window.addEventListener("keydown", handleStartKey);
-    return () => window.removeEventListener("keydown", handleStartKey);
-  }, [speechReady]);
-
-  /* ---------- ACCESSIBLE LANDING SCREEN ---------- */
+  /* ---------- ACCESSIBLE ACTIVATION GATE ---------- */
+  // Browsers require a user gesture before audio can play, so this
+  // gate appears on every load/refresh. See VoiceActivationGate for
+  // the accessibility details (keyboard + click + touch activation,
+  // immediate screen-reader announcement, reduced-motion support).
   if (!speechReady) {
-    return (
-      <div
-        tabIndex="0"
-        autoFocus
-        role="alert"
-        aria-live="assertive"
-        aria-label="Accessible Learning Platform. Press any key to activate voice control."
-        style={{
-          textAlign: "center",
-          marginTop: "20vh",
-          fontFamily: "Arial, sans-serif",
-        }}
-      >
-        <h1>Accessible Learning Platform</h1>
-        <p>Press ANY KEY to start voice control</p>
-
-        {/* Visible blinking cue for low-vision users */}
-        <p style={{
-          fontSize: 14,
-          color: "#666",
-          animation: "blink 1.5s ease-in-out infinite"
-        }}>
-          🔊 Voice instructions will begin after you press any key
-        </p>
-
-        <style>{`
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
-      `}</style>
-      </div>
-    );
+    return <VoiceActivationGate onActivate={() => setSpeechReady(true)} />;
   }
 
   /* ---------- MAIN APP ---------- */
