@@ -77,29 +77,43 @@ const flushQueue = () => {
 };
 
 export const speak = (text, onEnd = () => {}) => {
-  // If voices already confirmed ready, speak immediately
-  if (voicesReady) {
-    _doSpeak(text, onEnd);
-    return;
-  }
 
-  // Check synchronously — Chrome often has voices on second call
-  const voices = window.speechSynthesis.getVoices();
-  if (voices.length > 0) {
-    voicesReady = true;
-    _doSpeak(text, onEnd);
-    return;
-  }
+  const doSpeak = () => {
 
-  // Voices not ready yet — queue and wait for the browser event
-  speechQueue.push({ text, onEnd });
+    if (voicesReady) {
+      _doSpeak(text, onEnd);
+      return;
+    }
 
-  // onvoiceschanged fires once when voices load (usually < 100ms after page load)
-  window.speechSynthesis.onvoiceschanged = () => {
-    voicesReady = true;
-    window.speechSynthesis.onvoiceschanged = null; // clear after first fire
-    flushQueue();
+    const voices = window.speechSynthesis.getVoices();
+
+    if (voices.length > 0) {
+      voicesReady = true;
+      _doSpeak(text, onEnd);
+      return;
+    }
+
+    speechQueue.push({ text, onEnd });
+
+    window.speechSynthesis.onvoiceschanged = () => {
+      voicesReady = true;
+      window.speechSynthesis.onvoiceschanged = null;
+      flushQueue();
+    };
   };
+
+  if (isListening) {
+
+    const handler = () => {
+      window.removeEventListener("voiceEnd", handler);
+      doSpeak();
+    };
+
+    window.addEventListener("voiceEnd", handler, { once: true });
+    return;
+  }
+
+  doSpeak();
 };
 
 // ---------------- LISTENING CONTROL ----------------

@@ -1,19 +1,37 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
+/* ─────────────────────────────────────────
+   Design tokens — Soft White (matches dashboard)
+───────────────────────────────────────── */
+const T = {
+  bg:        "#f8f9fc",
+  surface:   "#ffffff",
+  surfaceHi: "#f0f2fa",
+  border:    "#e2e5ef",
+  borderHi:  "#5b52e8",
+  accent:    "#5b52e8",
+  accentDim: "#c8c5f8",
+  success:   "#16a34a",
+  warning:   "#d97706",
+  danger:    "#dc2626",
+  textPri:   "#111827",
+  textSec:   "#6b7280",
+  textMuted: "#9ca3af",
+  radius:    "12px",
+  font:      "'Inter', 'Segoe UI', sans-serif",
+};
+
 const UploadQuiz = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [course, setCourse] = useState("");
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(null);
 
   const [questions, setQuestions] = useState([
-    {
-      question: "",
-      options: ["", "", "", ""],
-      answer: "",
-    },
+    { question: "", options: ["", "", "", ""], answer: "" },
   ]);
 
   useEffect(() => {
@@ -22,14 +40,11 @@ const UploadQuiz = () => {
 
   const fetchCourses = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:5000/api/courses",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const res = await axios.get("http://localhost:5000/api/courses", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
       setCourses(res.data);
     } catch (err) {
@@ -58,11 +73,7 @@ const UploadQuiz = () => {
   const addQuestion = () => {
     setQuestions([
       ...questions,
-      {
-        question: "",
-        options: ["", "", "", ""],
-        answer: "",
-      },
+      { question: "", options: ["", "", "", ""], answer: "" },
     ]);
   };
 
@@ -70,11 +81,7 @@ const UploadQuiz = () => {
     const updated = questions.filter((_, i) => i !== index);
 
     if (updated.length === 0) {
-      updated.push({
-        question: "",
-        options: ["", "", "", ""],
-        answer: "",
-      });
+      updated.push({ question: "", options: ["", "", "", ""], answer: "" });
     }
 
     setQuestions(updated);
@@ -84,30 +91,19 @@ const UploadQuiz = () => {
     setTitle("");
     setDescription("");
     setCourse("");
-
-    setQuestions([
-      {
-        question: "",
-        options: ["", "", "", ""],
-        answer: "",
-      },
-    ]);
+    setQuestions([{ question: "", options: ["", "", "", ""], answer: "" }]);
   };
 
   const submitQuiz = async (e) => {
     e.preventDefault();
+    setStatus(null);
 
     try {
       setLoading(true);
 
       await axios.post(
         "http://localhost:5000/api/quizzes",
-        {
-          title,
-          description,
-          course,
-          questions,
-        },
+        { title, description, course, questions },
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -115,11 +111,17 @@ const UploadQuiz = () => {
         }
       );
 
-      alert("Quiz submitted successfully. Waiting for admin approval.");
+      setStatus({
+        type: "success",
+        message: "Quiz submitted successfully. Waiting for admin approval.",
+      });
 
       resetForm();
     } catch (err) {
-      alert(err.response?.data?.error || "Quiz upload failed");
+      setStatus({
+        type: "error",
+        message: err.response?.data?.error || "Quiz upload failed.",
+      });
     } finally {
       setLoading(false);
     }
@@ -127,154 +129,216 @@ const UploadQuiz = () => {
 
   return (
     <div style={styles.wrapper}>
-      <div style={styles.card}>
-        <h2 style={styles.heading}>Create Quiz</h2>
+      <style>{`
+        .field:focus { outline: none; border-color: ${T.accent} !important; box-shadow: 0 0 0 3px ${T.accent}18; }
+        .btn-secondary:hover { background: ${T.accent}10; }
+        .btn-remove:hover { background: ${T.danger}12; border-color: ${T.danger}55; }
+        .btn-primary:hover:not(:disabled) { background: #4a42d1; }
+        .btn-primary:disabled { opacity: 0.65; cursor: not-allowed; }
+        .option-row:focus-within { border-color: ${T.accent}; box-shadow: 0 0 0 3px ${T.accent}18; }
+      `}</style>
 
-        <form onSubmit={submitQuiz}>
+      {status && (
+        <div style={status.type === "success" ? styles.bannerSuccess : styles.bannerError}>
+          <span style={styles.bannerDot(status.type === "success" ? T.success : T.danger)} />
+          {status.message}
+        </div>
+      )}
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Quiz Title</label>
+      <form onSubmit={submitQuiz}>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Quiz title</label>
+          <input
+            className="field"
+            style={styles.input}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Chapter 3 Checkpoint"
+            required
+          />
+        </div>
 
-            <input
-              style={styles.input}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Quiz title"
-              required
-            />
-          </div>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Description</label>
+          <textarea
+            className="field"
+            style={styles.textarea}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="What does this quiz cover?"
+          />
+        </div>
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Description</label>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Course</label>
+          <select
+            className="field"
+            style={{ ...styles.input, cursor: "pointer" }}
+            value={course}
+            onChange={(e) => setCourse(e.target.value)}
+            required
+          >
+            <option value="">Select course</option>
+            {courses.map((item) => (
+              <option key={item._id} value={item._id}>
+                {item.title}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            <textarea
-              style={styles.textarea}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Quiz description"
-            />
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Select Course</label>
-
-            <select
-              style={styles.input}
-              value={course}
-              onChange={(e) => setCourse(e.target.value)}
-              required
-            >
-              <option value="">Select Course</option>
-
-              {courses.map((item) => (
-                <option key={item._id} value={item._id}>
-                  {item.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
+        <div style={styles.sectionHeader}>
           <h3 style={styles.subHeading}>Questions</h3>
+          <span style={styles.countPill}>{questions.length}</span>
+        </div>
 
-          {questions.map((q, index) => (
-            <div key={index} style={styles.questionCard}>
-
-              <h4>Question {index + 1}</h4>
-
-              <input
-                style={styles.input}
-                placeholder="Enter Question"
-                value={q.question}
-                onChange={(e) =>
-                  handleQuestionChange(index, e.target.value)
-                }
-              />
-
-              {q.options.map((option, optionIndex) => (
-                <input
-                  key={optionIndex}
-                  style={styles.input}
-                  placeholder={`Option ${optionIndex + 1}`}
-                  value={option}
-                  onChange={(e) =>
-                    handleOptionChange(
-                      index,
-                      optionIndex,
-                      e.target.value
-                    )
-                  }
-                />
-              ))}
-
-              <input
-                style={styles.input}
-                placeholder="Correct Answer"
-                value={q.answer}
-                onChange={(e) =>
-                  handleAnswerChange(index, e.target.value)
-                }
-              />
-
+        {questions.map((q, index) => (
+          <div key={index} style={styles.questionCard}>
+            <div style={styles.questionCardHeader}>
+              <span style={styles.qBadge}>Q{index + 1}</span>
               {questions.length > 1 && (
                 <button
                   type="button"
+                  className="btn-remove"
                   style={styles.removeButton}
                   onClick={() => removeQuestion(index)}
                 >
-                  Remove Question
+                  Remove
                 </button>
               )}
             </div>
-          ))}
 
-          <button
-            type="button"
-            style={styles.secondaryButton}
-            onClick={addQuestion}
-          >
-            + Add Question
-          </button>
+            <input
+              className="field"
+              style={styles.input}
+              placeholder="Enter question"
+              value={q.question}
+              onChange={(e) => handleQuestionChange(index, e.target.value)}
+            />
 
-          <button
-            type="submit"
-            style={styles.primaryButton}
-            disabled={loading}
-          >
-            {loading ? "Uploading..." : "Upload Quiz"}
-          </button>
+            <div style={styles.optionsGrid}>
+              {q.options.map((option, optionIndex) => {
+                const isAnswer = option !== "" && option === q.answer;
+                return (
+                  <div
+                    key={optionIndex}
+                    className="option-row"
+                    style={isAnswer ? styles.optionRowActive : styles.optionRow}
+                  >
+                    <span style={styles.optionLetter}>
+                      {String.fromCharCode(65 + optionIndex)}
+                    </span>
+                    <input
+                      style={styles.optionInput}
+                      placeholder={`Option ${optionIndex + 1}`}
+                      value={option}
+                      onChange={(e) =>
+                        handleOptionChange(index, optionIndex, e.target.value)
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
 
-        </form>
-      </div>
+            <div style={styles.formGroup}>
+              <label style={styles.labelSmall}>Correct answer</label>
+              <input
+                className="field"
+                style={styles.input}
+                placeholder="Must match one of the options above"
+                value={q.answer}
+                onChange={(e) => handleAnswerChange(index, e.target.value)}
+              />
+            </div>
+          </div>
+        ))}
+
+        <button
+          type="button"
+          className="btn-secondary"
+          style={styles.secondaryButton}
+          onClick={addQuestion}
+        >
+          + Add question
+        </button>
+
+        <button
+          type="submit"
+          className="btn-primary"
+          style={styles.primaryButton}
+          disabled={loading}
+        >
+          {loading ? "Uploading…" : "Upload quiz"}
+        </button>
+      </form>
     </div>
   );
 };
 
 const styles = {
   wrapper: {
+    maxWidth: "820px",
+    fontFamily: T.font,
+  },
+
+  bannerSuccess: {
     display: "flex",
-    justifyContent: "center",
-    padding: "20px",
+    alignItems: "center",
+    gap: "10px",
+    background: T.success + "10",
+    border: `1px solid ${T.success}30`,
+    color: T.success,
+    padding: "12px 16px",
+    borderRadius: T.radius,
+    fontSize: "13px",
+    fontWeight: 600,
+    marginBottom: "20px",
   },
-
-  card: {
-    width: "100%",
-    maxWidth: "900px",
-    background: "#fff",
-    padding: "30px",
-    borderRadius: "15px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+  bannerError: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    background: T.danger + "10",
+    border: `1px solid ${T.danger}30`,
+    color: T.danger,
+    padding: "12px 16px",
+    borderRadius: T.radius,
+    fontSize: "13px",
+    fontWeight: 600,
+    marginBottom: "20px",
   },
+  bannerDot: (color) => ({
+    width: "7px",
+    height: "7px",
+    borderRadius: "50%",
+    background: color,
+    flexShrink: 0,
+  }),
 
-  heading: {
-    textAlign: "center",
-    marginBottom: "25px",
-    color: "#333",
+  sectionHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    marginTop: "28px",
+    marginBottom: "16px",
   },
-
   subHeading: {
-    marginTop: "20px",
-    marginBottom: "15px",
-    color: "#444",
+    fontSize: "13px",
+    fontWeight: 700,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: T.textMuted,
+    margin: 0,
+  },
+  countPill: {
+    fontSize: "11px",
+    fontWeight: 700,
+    color: T.accent,
+    background: T.accent + "14",
+    border: `1px solid ${T.accent}25`,
+    borderRadius: "10px",
+    padding: "1px 8px",
   },
 
   formGroup: {
@@ -284,66 +348,149 @@ const styles = {
   },
 
   label: {
-    marginBottom: "8px",
-    fontWeight: "600",
-    color: "#555",
+    marginBottom: "7px",
+    fontWeight: 600,
+    fontSize: "13px",
+    color: T.textSec,
+  },
+  labelSmall: {
+    marginBottom: "7px",
+    marginTop: "4px",
+    fontWeight: 600,
+    fontSize: "12px",
+    color: T.textMuted,
   },
 
   input: {
-    padding: "12px",
-    borderRadius: "10px",
-    border: "1px solid #ccc",
-    fontSize: "14px",
-    marginBottom: "10px",
+    padding: "11px 13px",
+    borderRadius: "9px",
+    border: `1px solid ${T.border}`,
+    fontSize: "13.5px",
+    fontFamily: T.font,
+    color: T.textPri,
+    background: T.surface,
+    marginBottom: "0px",
+    transition: "border-color 0.15s, box-shadow 0.15s",
   },
 
   textarea: {
-    padding: "12px",
-    borderRadius: "10px",
-    border: "1px solid #ccc",
-    minHeight: "80px",
+    padding: "11px 13px",
+    borderRadius: "9px",
+    border: `1px solid ${T.border}`,
+    minHeight: "76px",
     resize: "vertical",
+    fontSize: "13.5px",
+    fontFamily: T.font,
+    color: T.textPri,
+    background: T.surface,
+    transition: "border-color 0.15s, box-shadow 0.15s",
   },
 
   questionCard: {
-    border: "1px solid #ddd",
-    borderRadius: "12px",
+    border: `1px solid ${T.border}`,
+    borderRadius: T.radius,
     padding: "20px",
-    marginBottom: "20px",
-    background: "#fafafa",
+    marginBottom: "18px",
+    background: T.surfaceHi,
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+  },
+  questionCardHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  qBadge: {
+    fontSize: "12px",
+    fontWeight: 700,
+    color: T.accent,
+    background: T.accent + "14",
+    border: `1px solid ${T.accent}25`,
+    borderRadius: "8px",
+    padding: "3px 10px",
+  },
+
+  optionsGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+  },
+  optionRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: "9px",
+    padding: "0 4px 0 10px",
+    transition: "border-color 0.15s, box-shadow 0.15s",
+  },
+  optionRowActive: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    background: T.success + "0a",
+    border: `1px solid ${T.success}45`,
+    borderRadius: "9px",
+    padding: "0 4px 0 10px",
+  },
+  optionLetter: {
+    fontSize: "11px",
+    fontWeight: 700,
+    color: T.textMuted,
+    flexShrink: 0,
+  },
+  optionInput: {
+    flex: 1,
+    border: "none",
+    background: "transparent",
+    padding: "10px 6px",
+    fontSize: "13px",
+    fontFamily: T.font,
+    color: T.textPri,
+    outline: "none",
   },
 
   primaryButton: {
     width: "100%",
-    padding: "14px",
+    padding: "13px",
     border: "none",
     borderRadius: "10px",
-    background: "#667eea",
+    background: T.accent,
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: 700,
     cursor: "pointer",
-    marginTop: "20px",
-    fontSize: "15px",
+    marginTop: "22px",
+    fontSize: "14px",
+    fontFamily: T.font,
+    transition: "background 0.15s",
   },
 
   secondaryButton: {
-    padding: "12px",
-    border: "1px solid #667eea",
-    borderRadius: "10px",
-    background: "#fff",
-    color: "#667eea",
+    padding: "10px 16px",
+    border: `1px solid ${T.accent}`,
+    borderRadius: "9px",
+    background: T.surface,
+    color: T.accent,
     cursor: "pointer",
-    marginBottom: "20px",
+    fontSize: "13px",
+    fontWeight: 600,
+    fontFamily: T.font,
+    transition: "background 0.15s",
   },
 
   removeButton: {
-    marginTop: "10px",
-    background: "#dc3545",
-    color: "#fff",
-    border: "none",
-    padding: "8px 12px",
-    borderRadius: "8px",
+    background: "transparent",
+    color: T.danger,
+    border: `1px solid ${T.border}`,
+    padding: "6px 12px",
+    borderRadius: "7px",
     cursor: "pointer",
+    fontSize: "12px",
+    fontWeight: 600,
+    fontFamily: T.font,
+    transition: "background 0.15s, border-color 0.15s",
   },
 };
 
