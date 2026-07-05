@@ -136,7 +136,7 @@ const styles = {
       answered: { bg: T.success,  border: T.success,  color: "#ffffff" },
       pending:  { bg: T.surface,  border: T.border,   color: T.textMuted },
     };
-    const s = map[state] || map.pending;
+    //const s = map[state] || map.pending;
     return {
       display: "flex",
       alignItems: "center",

@@ -92,7 +92,7 @@ const VoiceHandler = ({ setIsLoggedIn }) => {
       lastCommandRef.current = command;
 
       // ✅ GLOBAL COMMANDS — handle FIRST, before dispatching to children
-      let spoken = "";
+      //let spoken = "";
 
       if (command.includes("help")) {
   speak(

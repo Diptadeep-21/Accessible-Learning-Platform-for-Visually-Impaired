@@ -571,7 +571,7 @@ const CourseDetail = () => {
 
     setupSpacebarListening(handleCommand);
     return () => removeSpacebarListening();
-  }, [course, aiHandler]);
+  }, [course, aiHandler, navigate]);
 
   /* ── derived values ── */
   const modules = course?.modules || [];
