@@ -9,7 +9,7 @@ node_modules/
 
 # build output
 dist/
-build/
+frontend/build/
 
 # logs
 npm-debug.log*

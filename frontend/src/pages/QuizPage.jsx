@@ -131,11 +131,11 @@ const styles = {
     padding: "8px",
   },
   questionDot: (state) => {
-    const map = {
-      current:  { bg: T.accent,   border: T.accent,   color: "#ffffff" },
-      answered: { bg: T.success,  border: T.success,  color: "#ffffff" },
-      pending:  { bg: T.surface,  border: T.border,   color: T.textMuted },
-    };
+    // const map = {
+    //   current:  { bg: T.accent,   border: T.accent,   color: "#ffffff" },
+    //   answered: { bg: T.success,  border: T.success,  color: "#ffffff" },
+    //   pending:  { bg: T.surface,  border: T.border,   color: T.textMuted },
+    // };
     //const s = map[state] || map.pending;
     return {
       display: "flex",
