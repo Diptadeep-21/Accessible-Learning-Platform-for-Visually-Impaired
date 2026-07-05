@@ -186,7 +186,7 @@ router.post('/teacher-login', async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    res.json({ token, role: user.role });
+    res.json({ token, role: user.role, username: user.username});
 
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -224,7 +224,8 @@ router.post('/login', async (req, res) => {
 
     res.json({
       token,
-      role: user.role
+      role: user.role,
+      username: user.username
     });
 
   } catch (err) {
