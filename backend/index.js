@@ -15,11 +15,16 @@ connectDB();
 const app = express();
 
 // ✅ Allow frontend (React at localhost:3000) to call backend
-app.use(cors({
-  origin: 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      process.env.CLIENT_URL,
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // ✅ Parse incoming JSON (must be before routes)
 app.use(express.json());
