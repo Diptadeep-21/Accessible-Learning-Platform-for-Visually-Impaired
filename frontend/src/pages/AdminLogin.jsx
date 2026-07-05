@@ -56,7 +56,7 @@ const AdminLogin = () => {
       setLoading(true);
 
       const res = await axios.post(
-        "http://localhost:5000/api/auth/teacher-login",
+        `${process.env.REACT_APP_API}/api/auth/teacher-login`,
         { email, password }
       );
 

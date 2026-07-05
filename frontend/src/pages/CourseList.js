@@ -430,8 +430,8 @@ const CourseList = () => {
         axios.defaults.headers.common["Authorization"] =
           `Bearer ${localStorage.getItem("token")}`;
         const [courseRes, quizRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/courses"),
-          axios.get("http://localhost:5000/api/quizzes"),
+          axios.get(`${process.env.REACT_APP_API}/api/courses`),
+          axios.get(`${process.env.REACT_APP_API}/api/quizzes`),
         ]);
         const approvedCourses = courseRes.data.filter((c) => c.isApproved);
         const approvedQuizzes = quizRes.data.filter((q) => q.isApproved);

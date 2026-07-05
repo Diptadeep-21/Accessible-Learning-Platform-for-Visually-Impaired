@@ -62,7 +62,7 @@ const UploadCourse = () => {
       setLoading(true);
 
       await axios.post(
-        "http://localhost:5000/api/courses",
+        `${process.env.REACT_APP_API}/api/courses`,
         { title, description, category, difficulty, modules },
         {
           headers: {

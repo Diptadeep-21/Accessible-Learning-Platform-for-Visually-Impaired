@@ -219,7 +219,7 @@ export default function AIAssistant({ moduleText, setAIHandler }) {
       setActiveAction(action);
       speak("Processing, please wait");
 
-      const res = await fetch("http://localhost:5000/api/ai/process", {
+      const res = await fetch(`${process.env.REACT_APP_API}/api/ai/process`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ content: moduleText, action }),

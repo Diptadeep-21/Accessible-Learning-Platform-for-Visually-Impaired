@@ -415,7 +415,7 @@ const CourseDetail = () => {
       try {
         axios.defaults.headers.common["Authorization"] =
           `Bearer ${localStorage.getItem("token")}`;
-        const res = await axios.get(`http://localhost:5000/api/courses/${id}`);
+        const res = await axios.get(`${process.env.REACT_APP_API}/api/courses/${id}`);
         setCourse(res.data);
         setCurrent(0);
         setLoading(false);

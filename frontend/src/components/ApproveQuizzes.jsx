@@ -29,7 +29,7 @@ const ApproveQuizzes = () => {
   const loadQuizzes = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/quizzes/pending", {
+      const res = await axios.get(`${process.env.REACT_APP_API}/api/quizzes/pending`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
 
@@ -47,7 +47,7 @@ const ApproveQuizzes = () => {
       setApprovingId(id);
 
       await axios.put(
-        `http://localhost:5000/api/quizzes/${id}/approve`,
+        `${process.env.REACT_APP_API}/api/quizzes/${id}/approve`,
         {},
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );

@@ -310,7 +310,7 @@ const Login = ({ setIsLoggedIn }) => {
         return;
       }
       const descriptor = Array.from(detection.descriptor);
-      const res = await axios.post("http://localhost:5000/api/auth/face-login", {
+      const res = await axios.post(`${process.env.REACT_APP_API}/api/auth/face-login`, {
         username,
         faceDescriptor: descriptor,
       });
@@ -392,7 +392,7 @@ const Login = ({ setIsLoggedIn }) => {
     if (!email || !password) { alert("Email and password required"); return; }
     try {
       setLoading(true);
-      const res = await axios.post("http://localhost:5000/api/auth/login", { email, password });
+      const res = await axios.post(`${process.env.REACT_APP_API}/api/auth/login`, { email, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", res.data.role);
       localStorage.setItem("username", res.data.username);

@@ -34,7 +34,7 @@ const TeacherCourses = () => {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/courses", {
+      const res = await axios.get(`${process.env.REACT_APP_API}/api/courses`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -59,7 +59,7 @@ const TeacherCourses = () => {
     try {
       setDeletingId(id);
 
-      await axios.delete(`http://localhost:5000/api/courses/${id}`, {
+      await axios.delete(`${process.env.REACT_APP_API}/api/courses/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

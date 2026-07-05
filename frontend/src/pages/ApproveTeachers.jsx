@@ -32,7 +32,7 @@ const ApproveTeachers = () => {
       const token = localStorage.getItem("token");
 
       const res = await axios.get(
-        "http://localhost:5000/api/admin/pending-teachers",
+        `${process.env.REACT_APP_API}/api/admin/pending-teachers`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -51,7 +51,7 @@ const ApproveTeachers = () => {
       const token = localStorage.getItem("token");
 
       await axios.put(
-        `http://localhost:5000/api/admin/approve-teacher/${id}`,
+        `${process.env.REACT_APP_API}/api/admin/approve-teacher/${id}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -218,7 +218,7 @@ const Register = () => {
     const descriptor = Array.from(detection.descriptor);
 
     try {
-      await axios.post("http://localhost:5000/api/auth/student-register", {
+      await axios.post(`${process.env.REACT_APP_API}/api/auth/student-register`, {
         username: state.current.username, faceDescriptor: descriptor,
       });
       speak("Registration successful. Redirecting to login page.");
@@ -312,7 +312,7 @@ const Register = () => {
     if (!username || !email || !password) { alert("All fields are required"); return; }
     try {
       setLoading(true);
-      await axios.post("http://localhost:5000/api/auth/teacher-register", { username, email, password });
+      await axios.post(`${process.env.REACT_APP_API}/api/auth/teacher-register`, { username, email, password });
       alert("Teacher registered. Await admin approval.");
       navigate("/login");
     } catch (err) {

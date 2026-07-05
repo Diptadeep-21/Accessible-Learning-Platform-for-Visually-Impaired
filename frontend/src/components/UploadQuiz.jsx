@@ -40,7 +40,7 @@ const UploadQuiz = () => {
 
   const fetchCourses = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/courses", {
+      const res = await axios.get(`${process.env.REACT_APP_API}/api/courses`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -102,7 +102,7 @@ const UploadQuiz = () => {
       setLoading(true);
 
       await axios.post(
-        "http://localhost:5000/api/quizzes",
+        `${process.env.REACT_APP_API}/api/quizzes`,
         { title, description, course, questions },
         {
           headers: {

@@ -34,7 +34,7 @@ const TeacherQuizzes = () => {
   const fetchQuizzes = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/quizzes", {
+      const res = await axios.get(`${process.env.REACT_APP_API}/api/quizzes`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -59,7 +59,7 @@ const TeacherQuizzes = () => {
     try {
       setDeletingId(id);
 
-      await axios.delete(`http://localhost:5000/api/quizzes/${id}`, {
+      await axios.delete(`${process.env.REACT_APP_API}/api/quizzes/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
