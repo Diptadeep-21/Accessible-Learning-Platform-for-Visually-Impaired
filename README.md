@@ -199,6 +199,13 @@ Secure administrator authentication.
 
 ![Admin Login](screenshots/admin-login-pg.png)
 
+### Admin Dashboard
+
+Approve teachers, courses and quizzes
+
+![Admin Dashboard](screenshots/admin-dashboard.png)
+
+
 
 ## System Architecture
 
